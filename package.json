@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:test-nik.helloWorld"
+		"*"
 	],
 	"main": "./extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "test-nik.helloWorld",
-				"title": "Hello World"
+				"command": "test-nik.testNik",
+				"title": "Test Nik"
 			}
 		]
 	},
