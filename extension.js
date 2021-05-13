@@ -1,37 +1,5 @@
 const vscode = require('vscode');
 
-
-
-let a = `module rand_num_generator#(
-    parameter N = 3
-)
-
-(
-    input wire clk, reset,
-    output wire [N:0] q
-);
-
-assign r_next = {feedback_value, r_reg[N:1]};
-assign q = r_reg;
-
-typedef struct packed {
-    bit [7:0]  addr;
-    bit        valid;
-    bit [31:0] data;
-  } mem_pkt;
-
-  mem_pkt pkt;
-
-pkt.
-endmodule
-`
-let b = `balbal (woof.
- 	tata <= pkt.
- 	woof toto. +pkt.`
-// let tt = b.match(/[A-Za-z0-9]*\.$/);
-let tt = b.match(/[A-Za-z0-9]*\.$/g); //give last word
-let c = 0
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 
