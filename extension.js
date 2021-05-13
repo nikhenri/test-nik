@@ -53,19 +53,28 @@ function activate(context) {
 		'systemverilog',
 		{
 			provideCompletionItems(document, position) {
-				const linePrefix = document.lineAt(position).text.substr(0, position.character-1);
+				const linePrefix = document.lineAt(position).text.substr(0, position.character);
+				if (!linePrefix.endsWith('.')) {
+					return undefined;
+				}
 
-				let match = linePrefix.match(/[A-Za-z]+\w*$/g) // start with a letter, followed by any nb of caracter
+				// bit tot = test.
+				// bit tot = test.tata.
+				// bit tot = test.tata.);
+				let match = linePrefix.match(/[A-Za-z\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
 				if (match) {
 					console.log("searching for signal name...")
 
-					const variableName = match[0]
+					const variableName = match[0].slice(0, -1)
 					console.log(`searching for variable '${variableName}'`)
 					text = document.getText()
 					// first word that is not input | output | inout
-					const declaration_type = text.match(`\\b(?!input\\s|output\\s|inout\\s)(\\w+).*${variableName}`)[1]
+					let match_declaration = text.match(`\\b(?!input\\s|output\\s|inout\\s)([A-Za-z]+).*${variableName}`)
+					const declaration_type = match_declaration[0]
 					console.log(`Type is '${declaration_type}'`)
 
+
+					let struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
 					cnt += 1
 					return [
 						new vscode.CompletionItem(`Nik ${cnt}`, vscode.CompletionItemKind.Method),
