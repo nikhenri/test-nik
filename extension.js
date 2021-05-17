@@ -1,26 +1,56 @@
 const vscode = require('vscode');
+const fs = require('fs')
 
+console.log('Entering extension.js...');
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 
 /**
  * @param {vscode.ExtensionContext} context
- */
-function activate(context) {
+*/
+async function getFilePath(fileNameWithExt) {
+	let path
+	if(!getFilePath.listOfPath || !(path = getFilePath.listOfPath.find(x=> x.endsWith(fileNameWithExt)))) {
+		console.log("Updating getFilePath.listOfPath...")
+		const mapFct = (process.platform === "win32" ? (x => x.path.slice(1)) : (x => x.path))
+        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.sv")).map(mapFct)
+		path = getFilePath.listOfPath.find(x=> x.endsWith(fileNameWithExt))
+		if(!path) console.log(`Was not able to found '${fileNameWithExt}'`)
+    }
+	return path;
+}
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "test-nik" is now active!');
+async function getFileText(fileNameWithExt) {
+	let path = await getFilePath(fileNameWithExt)
+	console.log(`Reading '${path}'`)
+	return fs.readFileSync('c:/Users/nhenri/Desktop/tcp_ip_ip_vs_code_ext/src/common/pkg/qmngr_pkg.sv', 'utf8');
+}
 
+function getSignalName() {
+
+}
+
+async function activate(context) {
+	console.log('Activation...');
+
+	console.log("woof")
+	//console.log(`>>1 ${await getFilePath('qmngr_tx.sv')}`)
+	//console.log(`>>2 ${await getFilePath('qmngr_tx.sv')}`)
+	//console.log(`>>3 ${await getFilePath('qmngr_vx.sv')}`)
+	console.log(`>>4 ${await getFileText('qmngr_pkg.sv')}`)
+	console.log("miawf")
 
 	let cnt = 0
 
-
+    const out = vscode.window.createOutputChannel("Nik");
+    out.show();
+    out.appendLine('hello Nik');
 
 	const provider2 = vscode.languages.registerCompletionItemProvider(
 		'systemverilog',
 		{
 			provideCompletionItems(document, position) {
+
 				const linePrefix = document.lineAt(position).text.substr(0, position.character);
 				if (!linePrefix.endsWith('.')) {
 					return undefined;
@@ -29,20 +59,24 @@ function activate(context) {
 				// bit tot = test.
 				// bit tot = test.tata.
 				// bit tot = test.tata.);
-				let match = linePrefix.match(/[A-Za-z\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
-				if (match) {
-					console.log("searching for signal name...")
+				console.log("searching for signal name...")
 
+				let match = linePrefix.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
+				if (match) {
+
+                    // fileName = document.fileName
 					const variableName = match[0].slice(0, -1)
 					console.log(`searching for variable '${variableName}'`)
-					text = document.getText()
+					let text = document.getText()
 					// first word that is not input | output | inout
-					let match_declaration = text.match(`\\b(?!input\\s|output\\s|inout\\s)([A-Za-z]+).*${variableName}`)
+					const match_declaration = text.match(`\\b(?!input\\s|output\\s|inout\\s)[A-Za-z]+.*${variableName}`)
 					const declaration_type = match_declaration[0]
 					console.log(`Type is '${declaration_type}'`)
 
+					//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
+					const struct_list =  text.match(/(?![ ])\w*[ ]*struct[ {]+[\s\S]*?}[\s\S]*?;$/gm)
+                    const import_regexp = text.match(/(?![ ])import[ ]+[\s\S]*?;$/gm)
 
-					let struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
 					cnt += 1
 					return [
 						new vscode.CompletionItem(`Nik ${cnt}`, vscode.CompletionItemKind.Method),
@@ -55,7 +89,7 @@ function activate(context) {
 	);
 
 
-	context.subscriptions.push(disposable, provider2);
+	context.subscriptions.push(provider2);
 }
 
 // this method is called when your extension is deactivated
@@ -65,6 +99,7 @@ module.exports = {
 	activate,
 	deactivate
 }
+//console.log(`Previous file '${fileName}', current '${document.fileName}'`)
 
 				// const line = document.lineAt(position).text
 

@@ -1,7 +1,7 @@
 {
-	"name": "test-nik",
-	"displayName": "test Nik",
-	"description": "a test for vscode ext",
+	"name": "nik",
+	"displayName": "Nik",
+	"description": "Nik vscode extension",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.56.0"
@@ -13,14 +13,7 @@
 		"*"
 	],
 	"main": "./extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "test-nik.testNik",
-				"title": "Test Nik"
-			}
-		]
-	},
+	"contributes": {},
 	"scripts": {
 		"lint": "eslint .",
 		"pretest": "npm run lint",
@@ -36,5 +29,6 @@
 		"mocha": "^8.2.1",
 		"typescript": "^4.1.3",
 		"vscode-test": "^1.5.0"
-	}
+	},
+	"dependencies": {}
 }
