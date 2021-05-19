@@ -2,12 +2,8 @@ const vscode = require('vscode');
 const fs = require('fs')
 
 console.log('Entering extension.js...');
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 
-/**
- * @param {vscode.ExtensionContext} context
-*/
+//----------------------------------------------------------------------------
 async function getFilePath(fileNameWithExt) {
 	let path
 	if(!getFilePath.listOfPath || !(path = getFilePath.listOfPath.find(x=> x.endsWith(fileNameWithExt)))) {
@@ -20,68 +16,82 @@ async function getFilePath(fileNameWithExt) {
 	return path;
 }
 
+//----------------------------------------------------------------------------
 async function getFileText(fileNameWithExt) {
-	let path = await getFilePath(fileNameWithExt)
+	const path = await getFilePath(fileNameWithExt)
 	console.log(`Reading '${path}'`)
 	return fs.readFileSync('c:/Users/nhenri/Desktop/tcp_ip_ip_vs_code_ext/src/common/pkg/qmngr_pkg.sv', 'utf8');
 }
 
-function getSignalName() {
-
+//----------------------------------------------------------------------------
+function getFullSignalName(fullLine) {
+	const match = fullLine.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
+	if(match) return match[0].slice(0, -1)
 }
 
-async function activate(context) {
-	console.log('Activation...');
+//----------------------------------------------------------------------------
+function getSignalTypeName(fileText, signalName) {
+	// first word that is not input | output | inout
+	return fileText.match(`\\b(?!input\\s|output\\s|inout\\s)[A-Za-z]+.*${signalName}`)[0]
+}
 
-	console.log("woof")
-	//console.log(`>>1 ${await getFilePath('qmngr_tx.sv')}`)
-	//console.log(`>>2 ${await getFilePath('qmngr_tx.sv')}`)
+//----------------------------------------------------------------------------
+function getStructList(fileText) {
+	return fileText.match(/(?![ ])\w*[ ]*struct[ {]+[\s\S]*?}[\s\S]*?;$/gm)
+}
+
+//----------------------------------------------------------------------------
+function getStructName(structText) {
+	return structText.match(/}[ ]*(\w+)[ ]*;$/m)[1]
+}
+
+//----------------------------------------------------------------------------
+function getStructMemberName(structText) {
+	const matches = structText.matchAll(/(\w+)[ ]*;/g);
+	let group_matches = Array.from(matches).map(x => x[1])
+	return group_matches.slice(0, -1);
+}
+
+//----------------------------------------------------------------------------
+async function activate(context) {
 	//console.log(`>>3 ${await getFilePath('qmngr_vx.sv')}`)
-	console.log(`>>4 ${await getFileText('qmngr_pkg.sv')}`)
-	console.log("miawf")
+	//console.log(`>>4 ${await getFileText('qmngr_pkg.sv')}`)
 
 	let cnt = 0
-
-    const out = vscode.window.createOutputChannel("Nik");
-    out.show();
-    out.appendLine('hello Nik');
 
 	const provider2 = vscode.languages.registerCompletionItemProvider(
 		'systemverilog',
 		{
 			provideCompletionItems(document, position) {
-
 				const linePrefix = document.lineAt(position).text.substr(0, position.character);
-				if (!linePrefix.endsWith('.')) {
-					return undefined;
-				}
+				if (!linePrefix.endsWith('.')) return undefined
 
-				// bit tot = test.
-				// bit tot = test.tata.
-				// bit tot = test.tata.);
-				console.log("searching for signal name...")
+				let fullSignalName = getFullSignalName(linePrefix)
+				if(fullSignalName) {
+					console.log(`searching for variable '${fullSignalName}'`)
+					if(fullSignalName.split('.').length > 1) {
+						console.log(`Dont support multi-member, exiting`)
+						return undefined
+					}
 
-				let match = linePrefix.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
-				if (match) {
-
-                    // fileName = document.fileName
-					const variableName = match[0].slice(0, -1)
-					console.log(`searching for variable '${variableName}'`)
 					let text = document.getText()
-					// first word that is not input | output | inout
-					const match_declaration = text.match(`\\b(?!input\\s|output\\s|inout\\s)[A-Za-z]+.*${variableName}`)
-					const declaration_type = match_declaration[0]
+
+					const declaration_type = getSignalTypeName(text, fullSignalName)
 					console.log(`Type is '${declaration_type}'`)
 
 					//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
-					const struct_list =  text.match(/(?![ ])\w*[ ]*struct[ {]+[\s\S]*?}[\s\S]*?;$/gm)
+					const struct_list =  getStructList(text)
+					for (let struct of struct_list) {
+						if(getStructName(struct) == declaration_type) {
+							console.log(`Found struct`)
+							const completionList = [];
+							for (let structMember of getStructMemberName(struct)) {
+								completionList.push(new vscode.CompletionItem(structMember))
+							}
+							return completionList
+						}
+					}
                     const import_regexp = text.match(/(?![ ])import[ ]+[\s\S]*?;$/gm)
-
-					cnt += 1
-					return [
-						new vscode.CompletionItem(`Nik ${cnt}`, vscode.CompletionItemKind.Method),
-						//new vscode.CompletionItem('warn', vscode.CompletionItemKind.Method),
-					];
 				}
 			}
 		},
@@ -91,14 +101,27 @@ async function activate(context) {
 
 	context.subscriptions.push(provider2);
 }
+//----------------------------------------------------------------------------
 
 // this method is called when your extension is deactivated
 function deactivate() {}
+//----------------------------------------------------------------------------
 
 module.exports = {
 	activate,
 	deactivate
 }
+//----------------------------------------------------------------------------
+
+/*
+const out = vscode.window.createOutputChannel("Nik");
+out.show();
+out.appendLine('hello Nik');
+*/
+
+
+
+
 //console.log(`Previous file '${fileName}', current '${document.fileName}'`)
 
 				// const line = document.lineAt(position).text
