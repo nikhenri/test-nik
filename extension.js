@@ -48,8 +48,8 @@ function getStructName(structText) {
 //----------------------------------------------------------------------------
 function getStructMemberName(structText) {
 	const matches = structText.matchAll(/(\w+)[ ]*;/g);
-	let group_matches = Array.from(matches).map(x => x[1])
-	return group_matches.slice(0, -1);
+	let group_matches = Array.from(matches).slice(0, -1).map(x => x[1])
+	return group_matches;
 }
 
 //----------------------------------------------------------------------------
