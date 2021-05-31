@@ -1,24 +1,25 @@
 const vscode = require('vscode');
 const fs = require('fs')
+const path = require('path');
 
 console.log('Entering extension.js...');
 
 //----------------------------------------------------------------------------
-async function getFilePath(fileNameWithExt) {
-	let path
-	if(!getFilePath.listOfPath || !(path = getFilePath.listOfPath.find(x=> x.endsWith(fileNameWithExt)))) {
+async function getFilePath(fileNameWithoutExt) {
+	let filePath
+	const search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
+	if(!getFilePath.listOfPath || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		console.log("Updating getFilePath.listOfPath...")
-		const mapFct = (process.platform === "win32" ? (x => x.path.slice(1)) : (x => x.path))
-        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.sv")).map(mapFct)
-		path = getFilePath.listOfPath.find(x=> x.endsWith(fileNameWithExt))
-		if(!path) console.log(`Was not able to found '${fileNameWithExt}'`)
+        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.sv")).map(x => x.fsPath)
+		filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
+		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
     }
-	return path;
+	return filePath;
 }
 
 //----------------------------------------------------------------------------
-async function getFileText(fileNameWithExt) {
-	const path = await getFilePath(fileNameWithExt)
+async function getFileText(fileNameWithoutExt) {
+	const path = await getFilePath(fileNameWithoutExt)
 	console.log(`Reading '${path}'`)
 	return fs.readFileSync('c:/Users/nhenri/Desktop/tcp_ip_ip_vs_code_ext/src/common/pkg/qmngr_pkg.sv', 'utf8');
 }
@@ -100,6 +101,24 @@ async function activate(context) {
 
 
 	context.subscriptions.push(provider2);
+
+	async function provideDefinition(document, position, token) {
+		const word = document.getText(document.getWordRangeAtPosition(position));
+		const position_start_of_line = position.with(new vscode.Position(position.line, 0))
+		const text_after_cursor = document.getText().substring(document.offsetAt(position_start_of_line))
+
+		if(text_after_cursor.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(/)) {
+			console.log(`Searching entity: ${word}`)
+			const path = await getFilePath(word)
+			console.log(`FilePath for entity= ${path}`)
+			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
+		}
+	}
+
+	context.subscriptions.push(vscode.languages.registerDefinitionProvider(['systemverilog'], {
+		provideDefinition
+	}));
+
 }
 //----------------------------------------------------------------------------
 
@@ -119,6 +138,8 @@ out.show();
 out.appendLine('hello Nik');
 */
 
+//		const fileName = document.fileName;
+// const workDir = path.dirname(fileName);
 
 
 
