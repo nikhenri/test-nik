@@ -10,7 +10,7 @@ async function getFilePath(fileNameWithoutExt) {
 	const search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
 	if(!getFilePath.listOfPath || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		console.log("Updating getFilePath.listOfPath...")
-        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.sv")).map(x => x.fsPath)
+        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.*v")).map(x => x.fsPath)
 		filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
 		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
     }
@@ -99,18 +99,27 @@ async function activate(context) {
 		'.' // triggered whenever a '.' is being typed
 	);
 
-
+	//----------------------------------------------------------------------------
 	context.subscriptions.push(provider2);
 
 	async function provideDefinition(document, position, token) {
+		console.log("CTRL")
+		const line = document.lineAt(position).text
 		const word = document.getText(document.getWordRangeAtPosition(position));
-		const position_start_of_line = position.with(new vscode.Position(position.line, 0))
-		const text_after_cursor = document.getText().substring(document.offsetAt(position_start_of_line))
+		//const position_start_of_line = position.with(new vscode.Position(position.line, 0))
+		//const text_after_cursor = document.getText().substring(document.offsetAt(position_start_of_line))
 
-		if(text_after_cursor.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(/)) {
+		if(line.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(?\s*$/)) { // is this a module
+		//if(text_after_cursor.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(/)) { // is this a module
 			console.log(`Searching entity: ${word}`)
 			const path = await getFilePath(word)
 			console.log(`FilePath for entity= ${path}`)
+			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
+		}
+		if (line.match(/^\s*import\s\w+::/)) {
+			console.log(`Searching package: ${word}`)
+			const path = await getFilePath(word)
+			console.log(`FilePath for package= ${path}`)
 			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
 		}
 	}

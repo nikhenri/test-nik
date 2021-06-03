@@ -3,10 +3,11 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
+	"icon": "camaro.jpg",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/nikhenri/vscode_ext.git"
