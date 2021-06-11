@@ -1,3 +1,4 @@
+try {
 const vscode = require('vscode');
 const fs = require('fs')
 const path = require('path');
@@ -33,7 +34,9 @@ function getFullSignalName(fullLine) {
 //----------------------------------------------------------------------------
 function getSignalTypeName(fileText, signalName) {
 	// first word that is not input | output | inout
-	return fileText.match(`\\b(?!input\\s|output\\s|inout\\s)[A-Za-z]+.*${signalName}`)[0]
+	const matches = fileText.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm"));
+	let group_matches = Array.from(matches).slice(0, -1).map(x => x[1])
+	return group_matches[0]
 }
 
 //----------------------------------------------------------------------------
@@ -53,6 +56,53 @@ function getStructMemberName(structText) {
 	return group_matches;
 }
 
+//----------------------------------------------------------------------------
+function getStructInFile(structName, filePath) {
+	//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
+	let text = fs.readFileSync(filePath, 'utf8');
+	const struct_list =  getStructList(text)
+	for (let struct of struct_list) {
+		if(getStructName(struct) == structName) {
+			console.log(`Found struct`)
+			const completionList = [];
+			for (let structMember of getStructMemberName(struct)) {
+				completionList.push(new vscode.CompletionItem(structMember))
+			}
+			return completionList
+		}
+	}
+}
+//----------------------------------------------------------------------------
+function getImportName (text) {
+	const matches = text.matchAll(/^[ ]*import[ ]*?(.*);$/gm);
+	let groupMatch = Array.from(matches).slice(0, -1).map(x => x[1])
+	let ImportNameList = []
+	for (let match of groupMatch) {
+		for (let packageStr of match.split(",")) {
+			let packageName = packageStr.trim().split("::")[0]
+			console.log(`Found package ${packageName}`);
+			ImportNameList.push(packageName)
+		}
+	}
+	return ImportNameList
+}
+//----------------------------------------------------------------------------
+async function getStruct(structName, filePath) {
+	let returnFromFile = getStructInFile(structName, filePath)
+	if (returnFromFile) {
+		console.log(`Return struct from file ${filePath}`);
+		return returnFromFile
+	}
+	let text = fs.readFileSync(filePath, 'utf8');
+	importFileNameList = getImportName(text)
+	for (let importFileName of importFileNameList) {
+		let path = await getFilePath(importFileName)
+		let returnValue = getStruct(structName, path)
+		if (returnValue) {
+			return returnValue
+		}
+	}
+}
 //----------------------------------------------------------------------------
 async function activate(context) {
 	//console.log(`>>3 ${await getFilePath('qmngr_vx.sv')}`)
@@ -79,20 +129,7 @@ async function activate(context) {
 
 					const declaration_type = getSignalTypeName(text, fullSignalName)
 					console.log(`Type is '${declaration_type}'`)
-
-					//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
-					const struct_list =  getStructList(text)
-					for (let struct of struct_list) {
-						if(getStructName(struct) == declaration_type) {
-							console.log(`Found struct`)
-							const completionList = [];
-							for (let structMember of getStructMemberName(struct)) {
-								completionList.push(new vscode.CompletionItem(structMember))
-							}
-							return completionList
-						}
-					}
-                    const import_regexp = text.match(/(?![ ])import[ ]+[\s\S]*?;$/gm)
+					return getStruct(declaration_type, document.fileName)
 				}
 			}
 		},
@@ -140,7 +177,9 @@ module.exports = {
 	deactivate
 }
 //----------------------------------------------------------------------------
-
+} catch (error) {
+	console.error(">> CRASH stack:\n" + error);
+}
 /*
 const out = vscode.window.createOutputChannel("Nik");
 out.show();
@@ -152,68 +191,7 @@ out.appendLine('hello Nik');
 
 
 
-//console.log(`Previous file '${fileName}', current '${document.fileName}'`)
 
-				// const line = document.lineAt(position).text
-
-				// const text = document.getText()
-				// console.log("----------")
-				// console.log(text)
-				// console.log("----------")
-
-				// let u = document.lineAt(position)
-				// console.log(document.lineAt(position))
-				// console.log("----------")
-				// console.log(position)
-				// console.log("----------")
-				// console.log(document.lineAt(position).text)
-
-					// const provider1 = vscode.languages.registerCompletionItemProvider('systemverilog', {
-
-	// 	provideCompletionItems(document, position, token, context) {
-
-	// 		// a simple completion item which inserts `Hello World!`
-	// 		const simpleCompletion = new vscode.CompletionItem('Hello World!');
-
-	// 		// a completion item that inserts its text as snippet,
-	// 		// the `insertText`-property is a `SnippetString` which will be
-	// 		// honored by the editor.
-	// 		const snippetCompletion = new vscode.CompletionItem('Good part of the day');
-	// 		snippetCompletion.insertText = new vscode.SnippetString('Good ${1|morning,afternoon,evening|}. It is ${1}, right?');
-	// 		snippetCompletion.documentation = new vscode.MarkdownString("Inserts a snippet that lets you select the _appropriate_ part of the day for your greeting.");
-
-	// 		// a completion item that can be accepted by a commit character,
-	// 		// the `commitCharacters`-property is set which means that the completion will
-	// 		// be inserted and then the character will be typed.
-	// 		const commitCharacterCompletion = new vscode.CompletionItem('console');
-	// 		commitCharacterCompletion.commitCharacters = ['.'];
-	// 		commitCharacterCompletion.documentation = new vscode.MarkdownString('Press `.` to get `console.`');
-
-	// 		// a completion item that retriggers IntelliSense when being accepted,
-	// 		// the `command`-property is set which the editor will execute after
-	// 		// completion has been inserted. Also, the `insertText` is set so that
-	// 		// a space is inserted after `new`
-	// 		const commandCompletion = new vscode.CompletionItem('new');
-	// 		commandCompletion.kind = vscode.CompletionItemKind.Keyword;
-	// 		commandCompletion.insertText = 'new ';
-	// 		commandCompletion.command = { command: 'editor.action.triggerSuggest', title: 'Re-trigger completions...' };
-
-	// 		// return all completion items as array
-	// 		return [
-	// 			simpleCompletion,
-	// 			snippetCompletion,
-	// 			commitCharacterCompletion,
-	// 			commandCompletion
-	// 		];
-	// 	}
-	// });
-
-
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	// let disposable = vscode.commands.registerCommand('test-nik.testNik', function () {
 	// 	let a = vscode.window.activeTextEditor
 	// 	let b = vscode.window.activeTextEditor.document
 	// 	let c = vscode.window.activeTextEditor.selection
@@ -228,4 +206,4 @@ out.appendLine('hello Nik');
 
 	// 	// Display a message box to the user
 	// 	vscode.window.showInformationMessage('Hello World from test Nik!');
-	// });
+	// });.
