@@ -136,9 +136,9 @@ async function activate(context) {
 		'.' // triggered whenever a '.' is being typed
 	);
 
-	//----------------------------------------------------------------------------
 	context.subscriptions.push(provider2);
 
+	//----------------------------------------------------------------------------
 	async function provideDefinition(document, position, token) {
 		console.log("CTRL")
 		const line = document.lineAt(position).text

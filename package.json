@@ -3,7 +3,7 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
@@ -13,13 +13,31 @@
 		"url": "https://github.com/nikhenri/vscode_ext.git"
 	},
 	"categories": [
-		"Other"
+		"Programming Languages"
 	],
 	"activationEvents": [
 		"*"
 	],
 	"main": "./extension.js",
-	"contributes": {},
+	"contributes": {
+		"languages": [
+			{
+				"id": "systemverilog",
+				"extensions": [
+					".sv",
+					".v"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "systemverilog",
+				"scopeName": "source.systemverilog",
+				"path": "./systemverilog.tmLanguage"
+			}
+		]
+	},
 	"scripts": {
 		"lint": "eslint .",
 		"pretest": "npm run lint",
