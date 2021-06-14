@@ -34,7 +34,7 @@
 			{
 				"language": "systemverilog",
 				"scopeName": "source.systemverilog",
-				"path": "./systemverilog.tmLanguage"
+				"path": "./syntaxes/systemverilog.tmLanguage.json"
 			}
 		]
 	},
