@@ -3,7 +3,7 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
@@ -34,7 +34,7 @@
 			{
 				"language": "systemverilog",
 				"scopeName": "source.systemverilog",
-				"path": "./systemverilog.tmLanguage"
+				"path": "./syntaxes/systemverilog.tmLanguage.json"
 			}
 		]
 	},
