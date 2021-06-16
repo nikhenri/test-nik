@@ -32,28 +32,36 @@ function getFullSignalName(fullLine) {
 }
 
 //----------------------------------------------------------------------------
-function getSignalTypeName(fileText, signalName) {
+function getSignalTypeName(str, signalName) {
 	// first word that is not input | output | inout
-	const matches = fileText.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm"));
-	let group_matches = Array.from(matches).slice(0, -1).map(x => x[1])
-	return group_matches[0]
+	const matches = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")));
+	let signalTypeName = matches[0][1] //[0] get first occurance of the signal, [1] get the (match)
+	return signalTypeName
 }
 
 //----------------------------------------------------------------------------
-function getStructList(fileText) {
-	return fileText.match(/(?![ ])\w*[ ]*struct[ {]+[\s\S]*?}[\s\S]*?;$/gm)
+function getStructList(str) {
+	// 'struct' with or without 'packed' { * } 'word';
+	let structList = []
+	const matches = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm));
+	if (matches) {
+		structList = matches.map(x => x[0])
+	}
+	return structList
 }
 
 //----------------------------------------------------------------------------
-function getStructName(structText) {
-	return structText.match(/}[ ]*(\w+)[ ]*;$/m)[1]
+function getStructName(str) {
+	return str.match(/}\s*(\w+)\s*;$/m)[1]
 }
 
 //----------------------------------------------------------------------------
-function getStructMemberName(structText) {
-	const matches = structText.matchAll(/(\w+)[ ]*;/g);
-	let group_matches = Array.from(matches).slice(0, -1).map(x => x[1])
-	return group_matches;
+function getStructMemberName(str) {
+	let structMemberName = []
+	const matches = Array.from(str.matchAll(/(\w+)\s*;/g));
+	if (matches)
+		structMemberName = matches.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
+	return structMemberName
 }
 
 //----------------------------------------------------------------------------
@@ -61,11 +69,14 @@ function getStructInFile(structName, filePath) {
 	//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
 	let text = fs.readFileSync(filePath, 'utf8');
 	const struct_list =  getStructList(text)
+
 	for (let struct of struct_list) {
+		console.log(`Scanning struct '${struct}'`)
 		if(getStructName(struct) == structName) {
 			console.log(`Found struct`)
 			const completionList = [];
 			for (let structMember of getStructMemberName(struct)) {
+				console.log(`Found member ${structMember}`)
 				completionList.push(new vscode.CompletionItem(structMember))
 			}
 			return completionList
@@ -88,20 +99,22 @@ function getImportName (text) {
 }
 //----------------------------------------------------------------------------
 async function getStruct(structName, filePath) {
+	console.log(`Searching struct in '${filePath}'`)
 	let returnFromFile = getStructInFile(structName, filePath)
 	if (returnFromFile) {
-		console.log(`Return struct from file ${filePath}`);
 		return returnFromFile
 	}
 	let text = fs.readFileSync(filePath, 'utf8');
-	importFileNameList = getImportName(text)
+	let importFileNameList = getImportName(text)
 	for (let importFileName of importFileNameList) {
+		console.log(`Checking import '${importFileName}'`)
 		let path = await getFilePath(importFileName)
 		let returnValue = getStruct(structName, path)
 		if (returnValue) {
 			return returnValue
 		}
 	}
+	console.log(`Cant find '${structName}'`)
 }
 //----------------------------------------------------------------------------
 async function activate(context) {
