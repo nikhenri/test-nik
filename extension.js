@@ -34,8 +34,8 @@ function getFullSignalName(fullLine) {
 //----------------------------------------------------------------------------
 function getSignalTypeName(str, signalName) {
 	// first word that is not input | output | inout
-	const matches = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")));
-	let signalTypeName = matches[0][1] //[0] get first occurance of the signal, [1] get the (match)
+    const matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")));
+    let signalTypeName = matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
 	return signalTypeName
 }
 
@@ -43,9 +43,9 @@ function getSignalTypeName(str, signalName) {
 function getStructList(str) {
 	// 'struct' with or without 'packed' { * } 'word';
 	let structList = []
-	const matches = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm));
-	if (matches) {
-		structList = matches.map(x => x[0])
+    const matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm));
+    if (matchAll) {
+        structList = matchAll.map(x => x[0])
 	}
 	return structList
 }
@@ -58,9 +58,9 @@ function getStructName(str) {
 //----------------------------------------------------------------------------
 function getStructMemberName(str) {
 	let structMemberName = []
-	const matches = Array.from(str.matchAll(/(\w+)\s*;/g));
-	if (matches)
-		structMemberName = matches.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
+    const matchAll = Array.from(str.matchAll(/(\w+)\s*;/g));
+    if (matchAll)
+        structMemberName = matchAll.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
 	return structMemberName
 }
 
@@ -85,8 +85,8 @@ function getStructInFile(structName, filePath) {
 }
 //----------------------------------------------------------------------------
 function getImportName (text) {
-	const matches = text.matchAll(/^[ ]*import[ ]*?(.*);$/gm);
-	let groupMatch = Array.from(matches).slice(0, -1).map(x => x[1])
+    const matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm));
+    let groupMatch = matchAll.slice(0, -1).map(x => x[1])
 	let ImportNameList = []
 	for (let match of groupMatch) {
 		for (let packageStr of match.split(",")) {
@@ -117,13 +117,43 @@ async function getStruct(structName, filePath) {
 	console.log(`Cant find '${structName}'`)
 }
 //----------------------------------------------------------------------------
+function wordIsReserved(word) {
+    return word.match(new RegExp(`\\b(
+        accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign
+        |assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1
+        |byte|case|casex|casez|cell|chandle|checker|class|clocking|cmos|config|const
+        |constraint|context|continue|cover|covergroup|coverpoint|cross|deassign|default
+        |defparam|design|disable|dist|do|edge|else|end|endcase|endchecker|endclass|endclocking
+        |endconfig|endfunction|endgenerate|endgroup|endinterface|endmodule|endpackage|endprimitive
+        |endprogram|endproperty|endspecify|endsequence|endtable|endtask|enum|event|eventually
+        |expect|export|extends|extern|final|first_match|for|force|foreach|forever|fork|forkjoin
+        |function|generate|genvar|global|highz0|highz1|if|iff|ifnone|ignore_bins|illegal_bins
+        |implements|implies|import|incdir|include|initial|inout|input|inside|instance|int|integer
+        |interconnect|interface|intersect|join|join_any|join_none|large|let|liblist|library|local
+        |localparam|logic|longint|macromodule|matches|medium|modport|module|nand|negedge|nettype
+        |new|nexttime|nmos|nor|noshowcancelled|not|notif0|notif1|null|or|output|package|packed
+        |parameter|pmos|posedge|primitive|priority|program|property|protected|pull0|pull1|pulldown
+        |pullup|pulsestyle_ondetect|pulsestyle_onevent|pure|rand|randc|randcase|randsequence
+        |rcmos|real|realtime|ref|reg|reject_on|release|repeat|restrict|return|rnmos|rpmos|rtran
+        |rtranif0|rtranif1|s_always|s_eventually|s_nexttime|s_until|s_until_with|scalared|sequence
+        |shortint|shortreal|showcancelled|signed|small|soft|solve|specify|specparam|static|string
+        |strong|strong0|strong1|struct|super|supply0|supply1|sync_accept_on|sync_reject_on|table
+        |tagged|task|this|throughout|time|timeprecision|timeunit|tran|tranif0|tranif1|tri|tri0|tri1
+        |triand|trior|trireg|type|typedef|union|unique|unique0|unsigned|until|until_with|untyped|use
+        |uwire|var|vectored|virtual|void|wait|wait_order|wand|weak|weak0|weak1|while|wildcard|wire|with
+        |within|wor|xnor|xor)\\b`))
+}
+//----------------------------------------------------------------------------
+function flashLine(position) {
+    let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
+    let rangeOption = {range: new vscode.Range(new vscode.Position(position.line, 0), new vscode.Position(position.line, 999))}
+    vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
+    setTimeout(()=>{decoration.dispose()}, 2000)
+}
+//----------------------------------------------------------------------------
+
 async function activate(context) {
-	//console.log(`>>3 ${await getFilePath('qmngr_vx.sv')}`)
-	//console.log(`>>4 ${await getFileText('qmngr_pkg.sv')}`)
-
-	let cnt = 0
-
-	const provider2 = vscode.languages.registerCompletionItemProvider(
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
 		'systemverilog',
 		{
 			provideCompletionItems(document, position) {
@@ -147,31 +177,43 @@ async function activate(context) {
 			}
 		},
 		'.' // triggered whenever a '.' is being typed
-	);
-
-	context.subscriptions.push(provider2);
+    ));
 
 	//----------------------------------------------------------------------------
 	async function provideDefinition(document, position, token) {
 		console.log("CTRL")
-		const line = document.lineAt(position).text
-		const word = document.getText(document.getWordRangeAtPosition(position));
-		//const position_start_of_line = position.with(new vscode.Position(position.line, 0))
-		//const text_after_cursor = document.getText().substring(document.offsetAt(position_start_of_line))
 
-		if(line.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(?\s*$/)) { // is this a module
-		//if(text_after_cursor.match(/^[ ]*[a-zA-Z0-9_]*\s*#?\s*\(/)) { // is this a module
+        const word = document.getText(document.getWordRangeAtPosition(position))
+        if(wordIsReserved(word)) {
+            console.log("Reserved word!")
+            return
+        }
+		const line = document.lineAt(position).text
+
+        // is this a module / function
+        if(line.match(new RegExp(`^\\s*${word}\\s*#?\\s*\\(`, "g"))) {
 			console.log(`Searching entity: ${word}`)
 			const path = await getFilePath(word)
 			console.log(`FilePath for entity= ${path}`)
 			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
 		}
+        // is this import
 		if (line.match(/^\s*import\s\w+::/)) {
 			console.log(`Searching package: ${word}`)
 			const path = await getFilePath(word)
 			console.log(`FilePath for package= ${path}`)
 			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
 		}
+        // is this word
+        console.log(`Search for 1er line of ${word}`);
+        let text = document.getText()
+        let matchAll = Array.from(text.matchAll(new RegExp(`.*${word}`, "g")))
+        let firstLinePostition = document.positionAt(matchAll[0].index)
+        if(!firstLinePostition.isEqual(new vscode.Position(position.line, 0))) {
+            console.log("go to !");
+            flashLine(firstLinePostition)
+            return new vscode.Location(document.uri, firstLinePostition);
+        }
 	}
 
 	context.subscriptions.push(vscode.languages.registerDefinitionProvider(['systemverilog'], {
