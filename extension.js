@@ -22,7 +22,7 @@ async function getFilePath(fileNameWithoutExt) {
 async function getFileText(fileNameWithoutExt) {
 	const path = await getFilePath(fileNameWithoutExt)
 	console.log(`Reading '${path}'`)
-	return fs.readFileSync('c:/Users/nhenri/Desktop/tcp_ip_ip_vs_code_ext/src/common/pkg/qmngr_pkg.sv', 'utf8');
+	return fs.readFileSync(path, 'utf8');
 }
 
 //----------------------------------------------------------------------------
