@@ -6,6 +6,10 @@ const path = require('path');
 console.log('Entering extension.js...');
 
 //----------------------------------------------------------------------------
+function removeCommentedLine(text){
+	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+}
+//----------------------------------------------------------------------------
 async function getFilePath(fileNameWithoutExt) {
 	let filePath
 	const search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
@@ -158,14 +162,14 @@ async function activate(context) {
 		{
 			provideCompletionItems(document, position) {
 				const linePrefix = document.lineAt(position).text.substr(0, position.character);
-				if (!linePrefix.endsWith('.')) return undefined
+				if (!linePrefix.endsWith('.')) return
 
 				let fullSignalName = getFullSignalName(linePrefix)
 				if(fullSignalName) {
 					console.log(`searching for variable '${fullSignalName}'`)
 					if(fullSignalName.split('.').length > 1) {
 						console.log(`Dont support multi-member, exiting`)
-						return undefined
+						return
 					}
 
 					let text = document.getText()
