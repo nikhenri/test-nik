@@ -1,4 +1,4 @@
-try {
+try{
 const vscode = require('vscode');
 const fs = require('fs')
 const path = require('path');
@@ -6,9 +6,20 @@ const path = require('path');
 console.log('Entering extension.js...');
 
 //----------------------------------------------------------------------------
-function removeCommentedLine(text){
-	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+const tryCatch = (func) => {
+	return (...restArgs) => {
+		try{
+			return func(...restArgs)
+		} catch (error) {
+			console.error(`>> CATCH:\n${error}`);
+		}
+	}
 }
+//----------------------------------------------------------------------------
+const removeCommentedLine = tryCatch((text) => {
+	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+})
+
 //----------------------------------------------------------------------------
 async function getFilePath(fileNameWithoutExt) {
 	let filePath
@@ -30,21 +41,21 @@ async function getFileText(fileNameWithoutExt) {
 }
 
 //----------------------------------------------------------------------------
-function getFullSignalName(fullLine) {
+const getFullSignalName = tryCatch((fullLine) => {
 	const match = fullLine.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
 	if(match) return match[0].slice(0, -1)
-}
+})
 
 //----------------------------------------------------------------------------
-function getSignalTypeName(str, signalName) {
+const getSignalTypeName = tryCatch((str, signalName) => {
 	// first word that is not input | output | inout
     const matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")));
     let signalTypeName = matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
 	return signalTypeName
-}
+})
 
 //----------------------------------------------------------------------------
-function getStructList(str) {
+const getStructList = tryCatch((str) => {
 	// 'struct' with or without 'packed' { * } 'word';
 	let structList = []
     const matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm));
@@ -52,24 +63,24 @@ function getStructList(str) {
         structList = matchAll.map(x => x[0])
 	}
 	return structList
-}
+})
 
 //----------------------------------------------------------------------------
-function getStructName(str) {
+const getStructName = tryCatch((str) => {
 	return str.match(/}\s*(\w+)\s*;$/m)[1]
-}
+})
 
 //----------------------------------------------------------------------------
-function getStructMemberName(str) {
+const getStructMemberName = tryCatch((str) => {
 	let structMemberName = []
     const matchAll = Array.from(str.matchAll(/(\w+)\s*;/g));
     if (matchAll)
         structMemberName = matchAll.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
 	return structMemberName
-}
+})
 
 //----------------------------------------------------------------------------
-function getStructInFile(structName, filePath) {
+const getStructInFile = tryCatch((structName, filePath) => {
 	//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
 	let text = fs.readFileSync(filePath, 'utf8');
 	const struct_list =  getStructList(text)
@@ -86,9 +97,9 @@ function getStructInFile(structName, filePath) {
 			return completionList
 		}
 	}
-}
+})
 //----------------------------------------------------------------------------
-function getImportName (text) {
+const getImportName = tryCatch((text) => {
     const matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm));
     let groupMatch = matchAll.slice(0, -1).map(x => x[1])
 	let ImportNameList = []
@@ -100,7 +111,7 @@ function getImportName (text) {
 		}
 	}
 	return ImportNameList
-}
+})
 //----------------------------------------------------------------------------
 async function getStruct(structName, filePath) {
 	console.log(`Searching struct in '${filePath}'`)
@@ -121,7 +132,7 @@ async function getStruct(structName, filePath) {
 	console.log(`Cant find '${structName}'`)
 }
 //----------------------------------------------------------------------------
-function wordIsReserved(word) {
+const wordIsReserved = tryCatch((word) => {
     return word.match(new RegExp("\\b("+
         "accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign"+
         "|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1"+
@@ -146,21 +157,22 @@ function wordIsReserved(word) {
         "|triand|trior|trireg|type|typedef|union|unique|unique0|unsigned|until|until_with|untyped|use"+
         "|uwire|var|vectored|virtual|void|wait|wait_order|wand|weak|weak0|weak1|while|wildcard|wire|with"+
         "|within|wor|xnor|xor)\\b"))
-}
+})
 //----------------------------------------------------------------------------
-function flashLine(position) {
+const flashLine = tryCatch((position) => {
     let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
     let rangeOption = {range: new vscode.Range(new vscode.Position(position.line, 0), new vscode.Position(position.line, 999))}
     vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
     setTimeout(()=>{decoration.dispose()}, 2000)
-}
+})
 //----------------------------------------------------------------------------
-function getTextAfterPosition(document, position) {
-	return document.getText().substring(document.offsetAt(position))
-}
+const getTextAfterPosition =  tryCatch((document, position) => {
+	return removeCommentedLine(document.getText().substring(document.offsetAt(position)))
+})
+
 //----------------------------------------------------------------------------
 
-async function activate(context) {
+function activate(context) {
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
 		'systemverilog',
 		{
@@ -189,8 +201,8 @@ async function activate(context) {
 
 	//----------------------------------------------------------------------------
 	async function provideDefinition(document, position, token) {
+		try{
 		console.log("CTRL")
-
         const word = document.getText(document.getWordRangeAtPosition(position))
         if(wordIsReserved(word)) {
             console.log("Reserved word!")
@@ -198,17 +210,19 @@ async function activate(context) {
         }
 		const line = document.lineAt(position).text
 
-		const text_after_cursor = document.getText().substring(document.offsetAt(position.with(new vscode.Position(position.line, 0))))
+		const text_after_cursor = getTextAfterPosition(document, new vscode.Position(position.line, 0))
 
         // is this a module / function
-        if(line.match(new RegExp(`^\\s*${word}\\s*#?\\s*\\(`, "g"))) {
+        // if(text_after_cursor.match(new RegExp(`^\\s*${word}\\s*#?\\s*\\(`, "g"))) {
+        if(text_after_cursor.match(new RegExp(`^\\s*${word}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "g"))) {
 			console.log(`Searching entity: ${word}`)
 			const path = await getFilePath(word)
 			console.log(`FilePath for entity= ${path}`)
 			if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
 		}
         // is this import
-		if (line.match(/^\s*import\s\w+::/)) {
+		// if (line.match(/^\s*import\s*\w+::/)) {
+		if (line.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${word}::`, "g"))) {
 			console.log(`Searching package: ${word}`)
 			const path = await getFilePath(word)
 			console.log(`FilePath for package= ${path}`)
@@ -224,6 +238,10 @@ async function activate(context) {
             flashLine(firstLinePostition)
             return new vscode.Location(document.uri, firstLinePostition);
         }
+		console.log("Found nothing")
+		} catch (error) {
+			console.error(">> CRASH stack:\n" + error);
+		}
 	}
 
 	context.subscriptions.push(vscode.languages.registerDefinitionProvider(['systemverilog'], {
@@ -243,8 +261,10 @@ module.exports = {
 }
 //----------------------------------------------------------------------------
 } catch (error) {
-	console.error(">> CRASH stack:\n" + error);
+ 	console.error(">> CRASH stack:\n" + error);
 }
+
+
 /*
 const out = vscode.window.createOutputChannel("Nik");
 out.show();
@@ -254,21 +274,31 @@ out.appendLine('hello Nik');
 //		const fileName = document.fileName;
 // const workDir = path.dirname(fileName);
 
+/*
+		let a = vscode.window.activeTextEditor
+		let b = vscode.window.activeTextEditor.document
+		let c = vscode.window.activeTextEditor.selection
+		console.log(`Path ${b.fileName}`)
+		console.log(`lauggage ${b.languageId}`)
+		console.log(`Text ${b.getText()}`)
+		console.log(`Text ${c.active.line}`)
+		console.log(`Text ${c.active.character}`)
+		//console.log(`Text ${b.getWordRangeAtPosition()}`)
+		//console.log(`Text ${b.lineAt()}`)
+		// The code you place here will be executed every time your command is executed
 
+		// Display a message box to the user
+		vscode.window.showInformationMessage('Hello World from test Nik!');
+	});.
+*/
 
-
-	// 	let a = vscode.window.activeTextEditor
-	// 	let b = vscode.window.activeTextEditor.document
-	// 	let c = vscode.window.activeTextEditor.selection
-	// 	console.log(`Path ${b.fileName}`)
-	// 	console.log(`lauggage ${b.languageId}`)
-	// 	console.log(`Text ${b.getText()}`)
-	// 	console.log(`Text ${c.active.line}`)
-	// 	console.log(`Text ${c.active.character}`)
-	// 	//console.log(`Text ${b.getWordRangeAtPosition()}`)
-	// 	//console.log(`Text ${b.lineAt()}`)
-	// 	// The code you place here will be executed every time your command is executed
-
-	// 	// Display a message box to the user
-	// 	vscode.window.showInformationMessage('Hello World from test Nik!');
-	// });.
+/*
+	const getAss = tryCatch((cnt, cnt2) => {
+		console.log("woof " + cnt + ", " + cnt2);
+		//throw "is too low";
+		return 3
+	})
+	//----------------------------------------------------------------------------
+	
+	console.log(">> getAss: " +getAss(7, 2))
+*/
