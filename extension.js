@@ -151,6 +151,10 @@ function flashLine(position) {
     setTimeout(()=>{decoration.dispose()}, 2000)
 }
 //----------------------------------------------------------------------------
+function getTextAfterPosition(document, position) {
+	return document.getText().substring(document.offsetAt(position))
+}
+//----------------------------------------------------------------------------
 
 async function activate(context) {
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
@@ -189,6 +193,8 @@ async function activate(context) {
             return
         }
 		const line = document.lineAt(position).text
+
+		const text_after_cursor = document.getText().substring(document.offsetAt(position.with(new vscode.Position(position.line, 0))))
 
         // is this a module / function
         if(line.match(new RegExp(`^\\s*${word}\\s*#?\\s*\\(`, "g"))) {
