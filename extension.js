@@ -66,7 +66,7 @@ const getStructList = tryCatch((str) => {
 
 //----------------------------------------------------------------------------
 const getStructName = tryCatch((str) => {
-	return str.match(/}\s*(\w+)\s*;$/m)[1]
+	return str.match(/}\s*(\w+)\s*;/)[1]
 })
 
 //----------------------------------------------------------------------------
@@ -80,7 +80,6 @@ const getStructMemberName = tryCatch((str) => {
 
 //----------------------------------------------------------------------------
 const getStructInFile = tryCatch((structName, filePath) => {
-	//const struct_list =  text.match(/^[ ]*\w*[ ]*struct+[\s\S]*?}[\s\S]*?;$/gm)
 	let text = fs.readFileSync(filePath, 'utf8');
 	const struct_list =  getStructList(text)
 
@@ -173,8 +172,17 @@ const getTextAfterPosition = tryCatch((document, position) => {
 })
 
 //----------------------------------------------------------------------------
+const IsInstance = tryCatch((text, name) => {
+	return text.match(new RegExp(`^\\s*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`))
+})
+
+//----------------------------------------------------------------------------
+const IsImport = tryCatch((text, name) => {
+	return text.match(text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`)))
+})
+
+//----------------------------------------------------------------------------
 const provideDefinition = tryCatch(async (document, position, token) => {
-	try{
 	console.log("CTRL")
 	const word = document.getText(document.getWordRangeAtPosition(position))
 	if(wordIsReserved(word)) {
@@ -183,19 +191,22 @@ const provideDefinition = tryCatch(async (document, position, token) => {
 	}
 	const line = document.lineAt(position).text
 
-	const text_after_cursor = getTextAfterPosition(document, new vscode.Position(position.line, 0))
+	const textAfterStartOfLine = getTextAfterPosition(document, new vscode.Position(position.line, 0))
 
-	// is this a module / function
-	// if(text_after_cursor.match(new RegExp(`^\\s*${word}\\s*#?\\s*\\(`, "g"))) {
-	if(text_after_cursor.match(new RegExp(`^\\s*${word}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "g"))) {
+	// is this a module / function / interface
+	if(IsInstance(textAfterStartOfLine, word)) {
+		// check for entity
 		console.log(`Searching entity: ${word}`)
 		const path = await getFilePath(word)
 		console.log(`FilePath for entity= ${path}`)
 		if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0));
+		// check for function
+
+		// fuck off Interface =)
+
 	}
 	// is this import
-	// if (line.match(/^\s*import\s*\w+::/)) {
-	if (line.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${word}::`, "g"))) {
+	if (IsImport(line, word)) {
 		console.log(`Searching package: ${word}`)
 		const path = await getFilePath(word)
 		console.log(`FilePath for package= ${path}`)
@@ -212,13 +223,11 @@ const provideDefinition = tryCatch(async (document, position, token) => {
 		return new vscode.Location(document.uri, firstLinePostition);
 	}
 	console.log("Found nothing")
-	} catch (error) {
-		console.error(">> CRASH stack:\n" + error);
-	}
 })
 
 //----------------------------------------------------------------------------
 const provideCompletionItems = tryCatch((document, position) => {
+	console.log(".")
 	const linePrefix = document.lineAt(position).text.substr(0, position.character);
 	if (!linePrefix.endsWith('.')) return
 
