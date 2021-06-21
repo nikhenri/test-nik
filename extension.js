@@ -27,12 +27,15 @@ const removeCommentedLine = tryCatch((text) => {
 const getFilePath = tryCatch(async (fileNameWithoutExt)=> {
 	let filePath
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
-	if(!getFilePath.listOfPath || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
-		console.log("Updating getFilePath.listOfPath...")
+	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
+		console.log("Updating findFiles...")
         getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.*v")).map(x => x.fsPath)
+		if (!fileNameWithoutExt)
+			filePath = getFilePath.listOfPath
+		else
 		filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
-		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
     }
+		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
 	return filePath
 })
 
@@ -178,7 +181,8 @@ const getTextAfterPosition = tryCatch((document, position) => {
 
 //----------------------------------------------------------------------------
 const isInstance = tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`))
+    let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
+	if (matchAll.length) return matchAll
 })
 
 //----------------------------------------------------------------------------
@@ -188,19 +192,22 @@ const isFunction = tryCatch((text, name) => {
 
 //----------------------------------------------------------------------------
 const isTypedef = tryCatch((text, name) => {
-	// $\s*(?:input\s+|output\s+|inout\s+)?\w+\s*(?:\[.*?\])*\s+\w+(?:,\s*\w+\s*)*\s*(?:\s*=\s*.*\s*)?[;,)]
 	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?${name}(?:\\s*\\[.*?\\])*\\s+\\w+`))
 })
 //----------------------------------------------------------------------------
+const isModule = tryCatch((text, name) => {
+	return text.match(new RegExp(`^\\s*module\\s+${name}`))
+})
+//----------------------------------------------------------------------------
 const isImport = tryCatch((text, name) => {
-	return text.match(text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`)))
+	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`))
 })
 
 //----------------------------------------------------------------------------
 const getModuleLocation  = tryCatch(async (name) => {
 	console.log(`Searching entity: ${name}`)
 	let path = await getFilePath(name)
-	console.log(`FilePath for entity= ${name}`)
+	console.log(`FilePath for entity= ${path}`)
 	if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
 	console.log(`Can't found entity: ${name}`)
 })
@@ -252,6 +259,26 @@ const getTypeLocation = tryCatch(async (document, text, name) => {
 	console.log(`Can't found type: ${name}`)
 })
 //----------------------------------------------------------------------------
+const getInstanceLocation = tryCatch(async (document, text, name) => {
+	console.log(`Searching instance: ${name}`)
+	let filePathList = await getFilePath()
+	let locationList = []
+	for (let filePath of filePathList) {
+		let text = fs.readFileSync(filePath, 'utf8')
+		let instanceList = isInstance(text, name)
+		if (isInstance(text, name)) {
+			for (let instance of instanceList) {
+				let lineNumber = text.substr(0, instance.index).split(/\r\n|\n/).length - 1
+				locationList.push(new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber, 0)))
+			}
+		}
+	}
+	if(locationList.length) {
+		return locationList
+	}
+	console.log(`Can't found instance: ${name}`)
+})
+//----------------------------------------------------------------------------
 const getTypeIndex = tryCatch((text, name) => {
     let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
     if (matchAll.length) return matchAll[0].index
@@ -278,15 +305,19 @@ const provideDefinition = tryCatch(async (document, position, token) => {
 
 	if(isFunction(textAfterStartOfLine, word)) {
 		// let functionLocation = getFunctionLocation(document, removeCommentedLine(document.getText()), word)
-		let functionLocation = await getFunctionLocation(document, (document.getText()), word)
+		let functionLocation = await getFunctionLocation(document, document.getText(), word)
 		if(functionLocation) return functionLocation
 	}
 
 	if(isTypedef(textAfterStartOfLine, word)) {
-		let typeLocation = await getTypeLocation(document, (document.getText()), word)
+		let typeLocation = await getTypeLocation(document, document.getText(), word)
 		if(typeLocation) return typeLocation
 	}
 
+	if(isModule(textAfterStartOfLine, word)) {
+		let instanceLocation = await getInstanceLocation(document, document.getText(), word)
+		if(instanceLocation) return instanceLocation
+	}
 	// is this import
 	if (isImport(line, word)) {
 		console.log(`Searching package: ${word}`)
