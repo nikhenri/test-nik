@@ -361,8 +361,23 @@ const provideCompletionItems = tryCatch((document, position) => {
 })
 //----------------------------------------------------------------------------
 const activate = tryCatch((context) => {
-    context.subscriptions.push(vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'))
-	context.subscriptions.push(vscode.languages.registerDefinitionProvider(['systemverilog'], {provideDefinition}))
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'),
+							   vscode.languages.registerDefinitionProvider(['systemverilog'], {provideDefinition}),
+
+							   vscode.window.registerTerminalLinkProvider({
+								    provideTerminalLinks:  (context, token) => {
+										const startIndex = context.line.indexOf('help');
+										if (startIndex === -1) return []
+                                        console.log(`context.line >> ${context.line}`)
+										return [{startIndex: startIndex, length: 'link'.length}]
+									},
+									 handleTerminalLink: async (link) => {
+                                        console.log(`link >> ${JSON.stringify(link)}`)
+                                        vscode.workspace.openTextDocument(vscode.Uri.file('C://Users//nhenri//Desktop//tcp_ip_ip_vs_code_ext//src//common//pkg//qmngr_pkg.sv'))
+                                        vscode.window.showTextDocument(doc)
+								    }
+							})
+	 )
 })
 //----------------------------------------------------------------------------
 
@@ -424,3 +439,10 @@ out.appendLine('hello Nik')
 		console.timeLog('process')
 		console.timeEnd('process')
 		*/
+
+		/*
+			let a = vscode.window
+	let aa = vscode.window.activeTextEditor
+	let bb = vscode.window.activeTextEditor.document
+	let aaa = vscode.window.visibleTextEditors
+	*/
