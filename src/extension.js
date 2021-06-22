@@ -1,60 +1,21 @@
-const vscode = require('vscode')
-const fs = require('fs')
-const path = require('path')
-
 console.log('Entering extension.js...')
 
+const vscode = require('vscode')
+const fs = require('fs')
+const utils = require('./utils')
+
 //----------------------------------------------------------------------------
-const tryCatch = (func) => {
-	return (...restArgs) => {
-		try{
-			return func(...restArgs)
-		} catch (error) {
-			console.error(`>> CATCH:\n${error}`)
-			throw("Fuck off")
-		}
-	}
-}
-//----------------------------------------------------------------------------
-const removeCommentedLine = tryCatch((text) => {
-	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, (match) => {
-		return " ".repeat(match.length)
-	})
-})
 
 
 //----------------------------------------------------------------------------
-const getFilePath = tryCatch(async (fileNameWithoutExt)=> {
-	let filePath
-	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
-	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
-		console.log("Updating findFiles...")
-        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.*v")).map(x => x.fsPath)
-		if (!fileNameWithoutExt)
-			filePath = getFilePath.listOfPath
-		else
-		filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
-    }
-		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
-	return filePath
-})
-
-//----------------------------------------------------------------------------
-// const getFileText = tryCatch(async (fileNameWithoutExt) => {
-// 	let path = await getFilePath(fileNameWithoutExt)
-// 	console.log(`Reading '${path}'`)
-// 	return fs.readFileSync(path, 'utf8')
-// })
-
-//----------------------------------------------------------------------------
-const getFullSignalName = tryCatch((fullLine) => {
+const getFullSignalName = utils.tryCatch((fullLine) => {
 	let match = fullLine.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
 	if(match) {
 		return match[0].slice(0, -1)}
 })
 
 //----------------------------------------------------------------------------
-const getSignalTypeName = tryCatch((str, signalName) => {
+const getSignalTypeName = utils.tryCatch((str, signalName) => {
 	// first word that is not input | output | inout
     let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")))
     let signalTypeName = matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
@@ -62,7 +23,7 @@ const getSignalTypeName = tryCatch((str, signalName) => {
 })
 
 //----------------------------------------------------------------------------
-const getStructList = tryCatch((str) => {
+const getStructList = utils.tryCatch((str) => {
 	// 'struct' with or without 'packed' { * } 'word';
 	let structList = []
     let matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm))
@@ -73,12 +34,12 @@ const getStructList = tryCatch((str) => {
 })
 
 //----------------------------------------------------------------------------
-const getStructName = tryCatch((str) => {
+const getStructName = utils.tryCatch((str) => {
 	return str.match(/}\s*(\w+)\s*;/)[1]
 })
 
 //----------------------------------------------------------------------------
-const getStructMemberName = tryCatch((str) => {
+const getStructMemberName = utils.tryCatch((str) => {
 	let structMemberName = []
     let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
     if (matchAll.length)
@@ -87,7 +48,7 @@ const getStructMemberName = tryCatch((str) => {
 })
 
 //----------------------------------------------------------------------------
-const getStructInFile = tryCatch((structName, filePath) => {
+const getStructInFile = utils.tryCatch((structName, filePath) => {
 	let text = fs.readFileSync(filePath, 'utf8')
 	let struct_list =  getStructList(text)
 
@@ -106,7 +67,7 @@ const getStructInFile = tryCatch((structName, filePath) => {
 })
 
 //----------------------------------------------------------------------------
-const getImportName = tryCatch((text) => {
+const getImportName = utils.tryCatch((text) => {
     let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
     let groupMatch = matchAll.map(x => x[1])
 	let ImportNameList = []
@@ -121,7 +82,7 @@ const getImportName = tryCatch((text) => {
 })
 
 //----------------------------------------------------------------------------
-const getStruct = tryCatch(async (structName, filePath) => {
+const getStruct = utils.tryCatch(async (structName, filePath) => {
 	console.log(`Searching struct in '${filePath}'`)
 	let returnFromFile = getStructInFile(structName, filePath)
 	if (returnFromFile) {
@@ -131,7 +92,7 @@ const getStruct = tryCatch(async (structName, filePath) => {
 	let importFileNameList = getImportName(text)
 	for (let importFileName of importFileNameList) {
 		console.log(`Checking import '${importFileName}'`)
-		let path = await getFilePath(importFileName)
+		let path = await utils.getFilePath(importFileName)
 		let returnValue = getStruct(structName, path)
 		if (returnValue) {
 			return returnValue
@@ -141,7 +102,7 @@ const getStruct = tryCatch(async (structName, filePath) => {
 })
 
 //----------------------------------------------------------------------------
-const wordIsReserved = tryCatch((word) => {
+const wordIsReserved = utils.tryCatch((word) => {
     return word.match(new RegExp("\\b("+
         "accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign"+
         "|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1"+
@@ -168,70 +129,70 @@ const wordIsReserved = tryCatch((word) => {
         "|within|wor|xnor|xor)\\b"))
 })
 //----------------------------------------------------------------------------
-const flashLine = tryCatch((position) => {
+const flashLine = utils.tryCatch((position) => {
     let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
     let rangeOption = {range: new vscode.Range(new vscode.Position(position.line, 0), new vscode.Position(position.line, 999))}
     vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
     setTimeout(()=>{decoration.dispose()}, 2000)
 })
 //----------------------------------------------------------------------------
-const getTextAfterPosition = tryCatch((document, position) => {
+const getTextAfterPosition = utils.tryCatch((document, position) => {
 	return document.getText().substring(document.offsetAt(position))
 })
 
 //----------------------------------------------------------------------------
-const isInstance = tryCatch((text, name) => {
+const isInstance = utils.tryCatch((text, name) => {
     let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
 	if (matchAll.length) return matchAll
 })
 
 //----------------------------------------------------------------------------
-const isFunction = tryCatch((text, name) => {
+const isFunction = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`[\\.| ]+${name}\\s*\\([\\S\\s]*?\\)`))
 })
 
 //----------------------------------------------------------------------------
-const isTypedef = tryCatch((text, name) => {
+const isTypedef = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?${name}(?:\\s*\\[.*?\\])*\\s+\\w+`))
 })
 //----------------------------------------------------------------------------
-const isModule = tryCatch((text, name) => {
+const isModule = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`^\\s*module\\s+${name}`))
 })
 //----------------------------------------------------------------------------
-const isImport = tryCatch((text, name) => {
+const isImport = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`))
 })
 
 //----------------------------------------------------------------------------
-const getModuleLocation  = tryCatch(async (name) => {
+const getModuleLocation  = utils.tryCatch(async (name) => {
 	console.log(`Searching entity: ${name}`)
-	let path = await getFilePath(name)
+	let path = await utils.getFilePath(name)
 	console.log(`FilePath for entity= ${path}`)
 	if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
 	console.log(`Can't found entity: ${name}`)
 })
 
 //----------------------------------------------------------------------------
-const getFunctionIndex = tryCatch((text, name) => {
+const getFunctionIndex = utils.tryCatch((text, name) => {
     let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
     if (matchAll.length) return matchAll[0].index
 })
 
 //----------------------------------------------------------------------------
-const indexToPositionStartOfLine = tryCatch((document, index) => {
+const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
 	return new vscode.Position(document.positionAt(index).line, 0)
 })
 
 //----------------------------------------------------------------------------
-const getFunctionLocation = tryCatch(async (document, text, name) => {
+const getFunctionLocation = utils.tryCatch(async (document, text, name) => {
 	console.log(`Searching function: ${name}`)
 	let functionIndex = getFunctionIndex(text, name)
 	if(functionIndex) return new vscode.Location(document.uri, indexToPositionStartOfLine(document, functionIndex))
 	let importFileNameList = getImportName(text)
 	for (let importFileName of importFileNameList) {
 		console.log(`Checking import '${importFileName}'`)
-		let filePath = await getFilePath(importFileName)
+		let filePath = await utils.getFilePath(importFileName)
 		let textImport = fs.readFileSync(filePath, 'utf8')
 		functionIndex = getFunctionIndex(textImport, name)
 		let lineNumber = textImport.substr(0, functionIndex).split(/\r\n|\n/).length - 1
@@ -242,14 +203,14 @@ const getFunctionLocation = tryCatch(async (document, text, name) => {
 })
 
 //----------------------------------------------------------------------------
-const getTypeLocation = tryCatch(async (document, text, name) => {
+const getTypeLocation = utils.tryCatch(async (document, text, name) => {
 	console.log(`Searching type: ${name}`)
 	let typeIndex = getTypeIndex(text, name)
 	if(typeIndex) return new vscode.Location(document.uri, indexToPositionStartOfLine(document, typeIndex))
 	let importFileNameList = getImportName(text)
 	for (let importFileName of importFileNameList) {
 		console.log(`Checking import '${importFileName}'`)
-		let filePath = await getFilePath(importFileName)
+		let filePath = await utils.getFilePath(importFileName)
 		let textImport = fs.readFileSync(filePath, 'utf8')
 		typeIndex = getTypeIndex(textImport, name)
 		let lineNumber = textImport.substr(0, typeIndex).split(/\r\n|\n/).length - 1
@@ -259,9 +220,9 @@ const getTypeLocation = tryCatch(async (document, text, name) => {
 	console.log(`Can't found type: ${name}`)
 })
 //----------------------------------------------------------------------------
-const getInstanceLocation = tryCatch(async (document, text, name) => {
+const getInstanceLocation = utils.tryCatch(async (document, text, name) => {
 	console.log(`Searching instance: ${name}`)
-	let filePathList = await getFilePath()
+	let filePathList = await utils.getFilePath()
 	let locationList = []
 	for (let filePath of filePathList) {
 		let text = fs.readFileSync(filePath, 'utf8')
@@ -279,13 +240,13 @@ const getInstanceLocation = tryCatch(async (document, text, name) => {
 	console.log(`Can't found instance: ${name}`)
 })
 //----------------------------------------------------------------------------
-const getTypeIndex = tryCatch((text, name) => {
+const getTypeIndex = utils.tryCatch((text, name) => {
     let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
     if (matchAll.length) return matchAll[0].index
 })
 
 //----------------------------------------------------------------------------
-const provideDefinition = tryCatch(async (document, position, token) => {
+const provideDefinition = utils.tryCatch(async (document, position, token) => {
 	console.log("CTRL")
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(wordIsReserved(word)) {
@@ -321,7 +282,7 @@ const provideDefinition = tryCatch(async (document, position, token) => {
 	// is this import
 	if (isImport(line, word)) {
 		console.log(`Searching package: ${word}`)
-		let path = await getFilePath(word)
+		let path = await utils.getFilePath(word)
 		console.log(`FilePath for package= ${path}`)
 		if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
 	}
@@ -339,7 +300,7 @@ const provideDefinition = tryCatch(async (document, position, token) => {
 })
 
 //----------------------------------------------------------------------------
-const provideCompletionItems = tryCatch((document, position) => {
+const provideCompletionItems = utils.tryCatch((document, position) => {
 	console.log(".")
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.')) return
@@ -360,29 +321,32 @@ const provideCompletionItems = tryCatch((document, position) => {
 	}
 })
 //----------------------------------------------------------------------------
-const activate = tryCatch((context) => {
-    context.subscriptions.push(vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'),
-							   vscode.languages.registerDefinitionProvider(['systemverilog'], {provideDefinition}),
-
-							   vscode.window.registerTerminalLinkProvider({
-								    provideTerminalLinks:  (context, token) => {
-										const startIndex = context.line.indexOf('help');
-										if (startIndex === -1) return []
-                                        console.log(`context.line >> ${context.line}`)
-										return [{startIndex: startIndex, length: 'link'.length}]
-									},
-									 handleTerminalLink: async (link) => {
-                                        console.log(`link >> ${JSON.stringify(link)}`)
-                                        vscode.workspace.openTextDocument(vscode.Uri.file('C://Users//nhenri//Desktop//tcp_ip_ip_vs_code_ext//src//common//pkg//qmngr_pkg.sv'))
-                                        vscode.window.showTextDocument(doc)
-								    }
-							})
-	 )
+const provideTerminalLinks = utils.tryCatch((context, token) => {
+    const startIndex = context.line.indexOf('help');
+    if (startIndex === -1) return []
+    console.log(`context.line >> ${context.line}`)
+    return [{startIndex: startIndex, length: 'link'.length}]
+})
+//----------------------------------------------------------------------------
+const handleTerminalLink = utils.tryCatch((link) => {
+    console.log(`link >> ${JSON.stringify(link)}`)
+    vscode.workspace.openTextDocument(vscode.Uri.file('C://Users//nhenri//Desktop//tcp_ip_ip_vs_code_ext//src//common//pkg//qmngr_pkg.sv')).then(
+        (doc) => vscode.window.showTextDocument(doc)
+    )
+})
+//----------------------------------------------------------------------------
+const activate = utils.tryCatch((context) => {
+    let subscriptions = [
+                        vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'),
+						vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition}),
+                        vscode.window.registerTerminalLinkProvider({provideTerminalLinks, handleTerminalLink})
+                        ]
+    context.subscriptions.push(subscriptions )
 })
 //----------------------------------------------------------------------------
 
 // this method is called when your extension is deactivated
-const deactivate = tryCatch(() => {})
+const deactivate = utils.tryCatch(() => {})
 
 //----------------------------------------------------------------------------
 module.exports = {
@@ -419,7 +383,7 @@ out.appendLine('hello Nik')
 */
 
 /*
-	const getAss = tryCatch((cnt, cnt2) => {
+	const getAss = utils.tryCatch((cnt, cnt2) => {
 		console.log("woof " + cnt + ", " + cnt2)
 		//throw "is too low"
 		return 3
