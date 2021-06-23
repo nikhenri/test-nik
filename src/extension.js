@@ -3,9 +3,7 @@ console.log('Entering extension.js...')
 const vscode = require('vscode')
 const fs = require('fs')
 const utils = require('./utils')
-
-//----------------------------------------------------------------------------
-
+const regexp = require('./regexp')
 
 //----------------------------------------------------------------------------
 const getFullSignalName = utils.tryCatch((fullLine) => {
@@ -67,22 +65,10 @@ const getStructInFile = utils.tryCatch((structName, filePath) => {
 })
 
 //----------------------------------------------------------------------------
-const getImportName = utils.tryCatch((text) => {
-    let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
-    let groupMatch = matchAll.map(x => x[1])
-	let ImportNameList = []
-	for (let match of groupMatch) {
-		for (let packageStr of match.split(",")) {
-			let packageName = packageStr.trim().split("::")[0]
-			console.log(`Found package ${packageName}`)
-			ImportNameList.push(packageName)
-		}
-	}
-	return ImportNameList
-})
+
 
 //----------------------------------------------------------------------------
-const getStruct = utils.tryCatch(async (structName, filePath) => {
+const getStruct = async (structName, filePath) => {
 	console.log(`Searching struct in '${filePath}'`)
 	let returnFromFile = getStructInFile(structName, filePath)
 	if (returnFromFile) {
@@ -99,35 +85,10 @@ const getStruct = utils.tryCatch(async (structName, filePath) => {
 		}
 	}
 	console.log(`Cant find '${structName}'`)
-})
+}
 
 //----------------------------------------------------------------------------
-const wordIsReserved = utils.tryCatch((word) => {
-    return word.match(new RegExp("\\b("+
-        "accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign"+
-        "|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1"+
-        "|byte|case|casex|casez|cell|chandle|checker|class|clocking|cmos|config|const"+
-        "|constraint|context|continue|cover|covergroup|coverpoint|cross|deassign|default"+
-        "|defparam|design|disable|dist|do|edge|else|end|endcase|endchecker|endclass|endclocking"+
-        "|endconfig|endfunction|endgenerate|endgroup|endinterface|endmodule|endpackage|endprimitive"+
-        "|endprogram|endproperty|endspecify|endsequence|endtable|endtask|enum|event|eventually"+
-        "|expect|export|extends|extern|final|first_match|for|force|foreach|forever|fork|forkjoin"+
-        "|function|generate|genvar|global|highz0|highz1|if|iff|ifnone|ignore_bins|illegal_bins"+
-        "|implements|implies|import|incdir|include|initial|inout|input|inside|instance|int|integer"+
-        "|interconnect|interface|intersect|join|join_any|join_none|large|let|liblist|library|local"+
-        "|localparam|logic|longint|macromodule|matches|medium|modport|module|nand|negedge|nettype"+
-        "|new|nexttime|nmos|nor|noshowcancelled|not|notif0|notif1|null|or|output|package|packed"+
-        "|parameter|pmos|posedge|primitive|priority|program|property|protected|pull0|pull1|pulldown"+
-        "|pullup|pulsestyle_ondetect|pulsestyle_onevent|pure|rand|randc|randcase|randsequence"+
-        "|rcmos|real|realtime|ref|reg|reject_on|release|repeat|restrict|return|rnmos|rpmos|rtran"+
-        "|rtranif0|rtranif1|s_always|s_eventually|s_nexttime|s_until|s_until_with|scalared|sequence"+
-        "|shortint|shortreal|showcancelled|signed|small|soft|solve|specify|specparam|static|string"+
-        "|strong|strong0|strong1|struct|super|supply0|supply1|sync_accept_on|sync_reject_on|table"+
-        "|tagged|task|this|throughout|time|timeprecision|timeunit|tran|tranif0|tranif1|tri|tri0|tri1"+
-        "|triand|trior|trireg|type|typedef|union|unique|unique0|unsigned|until|until_with|untyped|use"+
-        "|uwire|var|vectored|virtual|void|wait|wait_order|wand|weak|weak0|weak1|while|wildcard|wire|with"+
-        "|within|wor|xnor|xor)\\b"))
-})
+
 //----------------------------------------------------------------------------
 const flashLine = utils.tryCatch((position) => {
     let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
@@ -136,42 +97,20 @@ const flashLine = utils.tryCatch((position) => {
     setTimeout(()=>{decoration.dispose()}, 2000)
 })
 //----------------------------------------------------------------------------
-const getTextAfterPosition = utils.tryCatch((document, position) => {
-	return document.getText().substring(document.offsetAt(position))
-})
+// const getTextAfterPosition = utils.tryCatch((document, position) => {
+// 	return document.getText().substring(document.offsetAt(position))
+// })
+
+
 
 //----------------------------------------------------------------------------
-const isInstance = utils.tryCatch((text, name) => {
-    let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
-	if (matchAll.length) return matchAll
-})
-
-//----------------------------------------------------------------------------
-const isFunction = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`[\\.| ]+${name}\\s*\\([\\S\\s]*?\\)`))
-})
-
-//----------------------------------------------------------------------------
-const isTypedef = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?${name}(?:\\s*\\[.*?\\])*\\s+\\w+`))
-})
-//----------------------------------------------------------------------------
-const isModule = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*module\\s+${name}`))
-})
-//----------------------------------------------------------------------------
-const isImport = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`))
-})
-
-//----------------------------------------------------------------------------
-const getModuleLocation  = utils.tryCatch(async (name) => {
+const getModuleLocation  = async (name) => {
 	console.log(`Searching entity: ${name}`)
 	let path = await utils.getFilePath(name)
 	console.log(`FilePath for entity= ${path}`)
 	if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
 	console.log(`Can't found entity: ${name}`)
-})
+}
 
 //----------------------------------------------------------------------------
 const getFunctionIndex = utils.tryCatch((text, name) => {
@@ -185,25 +124,28 @@ const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
 })
 
 //----------------------------------------------------------------------------
-const getFunctionLocation = utils.tryCatch(async (document, text, name) => {
+const getFunctionLocation = async (document, textt, name) => {
+
 	console.log(`Searching function: ${name}`)
-	let functionIndex = getFunctionIndex(text, name)
-	if(functionIndex) return new vscode.Location(document.uri, indexToPositionStartOfLine(document, functionIndex))
-	let importFileNameList = getImportName(text)
-	for (let importFileName of importFileNameList) {
-		console.log(`Checking import '${importFileName}'`)
-		let filePath = await utils.getFilePath(importFileName)
-		let textImport = fs.readFileSync(filePath, 'utf8')
-		functionIndex = getFunctionIndex(textImport, name)
-		let lineNumber = textImport.substr(0, functionIndex).split(/\r\n|\n/).length - 1
-		setTimeout(()=>{flashLine(new vscode.Position(lineNumber, 0))}, 100)
-		if(functionIndex) return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber, 0))
+
+	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
+	let {text, path} = await utils.getFileText(fileNameWithoutExt)
+	let scanLileNameWithoutExtList = [fileNameWithoutExt, ...regexp.getImportNameList(text)]
+	for (let scanLileNameWithoutExt of scanLileNameWithoutExtList) {
+		console.log(`Scanning ${scanLileNameWithoutExt}`)
+		let {text, path} = await utils.getFileText(scanLileNameWithoutExt)
+		let functionIndex = getFunctionIndex(text, name)
+		if(functionIndex) {
+			let position = utils.indexToPosition(text, functionIndex)
+			console.log(`Found match in ${path}, line: ${position.line}, char: ${position.character}`)
+			return new vscode.Location(vscode.Uri.file(path), position)
+		}
 	}
 	console.log(`Can't found function: ${name}`)
-})
+}
 
 //----------------------------------------------------------------------------
-const getTypeLocation = utils.tryCatch(async (document, text, name) => {
+const getTypeLocation = async (document, text, name) => {
 	console.log(`Searching type: ${name}`)
 	let typeIndex = getTypeIndex(text, name)
 	if(typeIndex) return new vscode.Location(document.uri, indexToPositionStartOfLine(document, typeIndex))
@@ -218,9 +160,9 @@ const getTypeLocation = utils.tryCatch(async (document, text, name) => {
 		if(typeIndex) return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber, 0))
 	}
 	console.log(`Can't found type: ${name}`)
-})
+}
 //----------------------------------------------------------------------------
-const getInstanceLocation = utils.tryCatch(async (document, text, name) => {
+const getInstanceLocation = async (document, text, name) => {
 	console.log(`Searching instance: ${name}`)
 	let filePathList = await utils.getFilePath()
 	let locationList = []
@@ -238,7 +180,7 @@ const getInstanceLocation = utils.tryCatch(async (document, text, name) => {
 		return locationList
 	}
 	console.log(`Can't found instance: ${name}`)
-})
+}
 //----------------------------------------------------------------------------
 const getTypeIndex = utils.tryCatch((text, name) => {
     let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
@@ -246,41 +188,39 @@ const getTypeIndex = utils.tryCatch((text, name) => {
 })
 
 //----------------------------------------------------------------------------
-const provideDefinition = utils.tryCatch(async (document, position, token) => {
+const provideDefinition = async (document, position, token) => {
 	console.log("CTRL")
-	let word = document.getText(document.getWordRangeAtPosition(position))
-	if(wordIsReserved(word)) {
-		console.log("Reserved word!")
-		return
-	}
-	let line = document.lineAt(position).text
+	utils.getFileText()
 
-	let textAfterStartOfLine = getTextAfterPosition(document, new vscode.Position(position.line, 0))
+	let word = document.getText(document.getWordRangeAtPosition(position))
+	if(regexp.wordIsNumber(word) || regexp.wordIsReserved(word)) return
+	// console.log(`Word: ${word}`)
+
+	// @ TODO
+	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0)))
 
 	// is this a module
-	if(isInstance(textAfterStartOfLine, word)) {
-		// check for entity
+	if(regexp.isInstance(lineOfWordAndTextAfter, word)) {
 		let moduleLocation = getModuleLocation(word)
 		if(moduleLocation) return moduleLocation
 	}
 
-	if(isFunction(textAfterStartOfLine, word)) {
-		// let functionLocation = getFunctionLocation(document, removeCommentedLine(document.getText()), word)
+	if(regexp.isFunction(lineOfWordAndTextAfter, word)) {
 		let functionLocation = await getFunctionLocation(document, document.getText(), word)
 		if(functionLocation) return functionLocation
 	}
 
-	if(isTypedef(textAfterStartOfLine, word)) {
+	if(regexp.isTypedef(lineOfWordAndTextAfter, word)) {
 		let typeLocation = await getTypeLocation(document, document.getText(), word)
 		if(typeLocation) return typeLocation
 	}
 
-	if(isModule(textAfterStartOfLine, word)) {
+	if(regexp.isModule(lineOfWordAndTextAfter, word)) {
 		let instanceLocation = await getInstanceLocation(document, document.getText(), word)
 		if(instanceLocation) return instanceLocation
 	}
 	// is this import
-	if (isImport(line, word)) {
+	if (regexp.isImport(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching package: ${word}`)
 		let path = await utils.getFilePath(word)
 		console.log(`FilePath for package= ${path}`)
@@ -297,7 +237,7 @@ const provideDefinition = utils.tryCatch(async (document, position, token) => {
 		return new vscode.Location(document.uri, firstLinePostition)
 	}
 	console.log("Found nothing")
-})
+}
 
 //----------------------------------------------------------------------------
 const provideCompletionItems = utils.tryCatch((document, position) => {

@@ -8,23 +8,31 @@ const tryCatch = (func) => {
 		try{
 			return func(...restArgs)
 		} catch (error) {
-			console.error(`>> CATCH:\n${error}`)
+			console.error(`>> ${error}`)
+			// console.trace()
 			throw("Fuck off")
 		}
 	}
 }
 
 //----------------------------------------------------------------------------
-// module.exports = func => {
-//     return (req, res, next) => {
-//         func(req, res, next).catch(next)
-//     }
-
-// }
+const tryCatchAsync = (func) => {
+	return (...restArgs) => {
+		func(...restArgs).
+		then((ret)=>{
+			console.log(ret)
+			return ret
+		}).catch((error) => {
+			console.error(`>> ${error}`)
+			// console.trace()
+			throw("Fuck off")
+		})
+	}
+}
 
 //----------------------------------------------------------------------------
 const replaceCommentWithSpace = tryCatch((text) => {
-	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|\r/g, (match) => {
+	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|/g, (match) => {
 		return " ".repeat(match.length)
 	})
 })
@@ -35,7 +43,10 @@ const getFilePath = async (fileNameWithoutExt)=> {
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		console.log("Updating findFiles...")
-        getFilePath.listOfPath = (await vscode.workspace.findFiles("**/*.*v")).map(x => x.fsPath)
+        let finFiles = await vscode.workspace.findFiles("**/*.*v")
+		getFilePath.listOfPath = finFiles.map(x => x.fsPath)
+		console.log("Done")
+
 		if (!fileNameWithoutExt)
 			filePath = getFilePath.listOfPath
 		else
@@ -47,16 +58,39 @@ const getFilePath = async (fileNameWithoutExt)=> {
 
 //----------------------------------------------------------------------------
 const getFileText = async (fileNameWithoutExt) => {
-	let path = await getFilePath(fileNameWithoutExt)
-	console.log(`Reading '${path}'`)
-    let text = fs.readFileSync(path, 'utf8')
-	return {text, path};
+	if(!fileNameWithoutExt) {
+		getFileText.textObj = {}
+		return
+	}
+	if(!(fileNameWithoutExt in getFileText.textObj)) {
+		let path = await getFilePath(fileNameWithoutExt)
+		console.log(`Reading '${path}'`)
+    	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
+		getFileText.textObj[fileNameWithoutExt] = { path, text }
+	}
+
+	return getFileText.textObj[fileNameWithoutExt];
 }
 
 //----------------------------------------------------------------------------
+const uriToFileNameWithoutExt = tryCatch((uri) => {
+	return path.parse(uri.fsPath).name
+})
+
+//----------------------------------------------------------------------------
+const indexToPosition = tryCatch((text, index) => {
+	let lineSplit = text.substr(0, index).split(/\r\n|\n/)
+	let line = lineSplit.length - 1
+	let char = lineSplit[lineSplit.length - 1].length
+	return new vscode.Position(line, char)
+})
+//----------------------------------------------------------------------------
 module.exports = {
     tryCatch,
+	tryCatchAsync,
     replaceCommentWithSpace,
     getFilePath,
     getFileText,
+	uriToFileNameWithoutExt,
+	indexToPosition,
 };
