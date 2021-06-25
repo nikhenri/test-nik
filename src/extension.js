@@ -121,7 +121,7 @@ const getFunctionIndex = utils.tryCatch((text, name) => {
 })
 
 //----------------------------------------------------------------------------
-const getModuleIndex = utils.tryCatch((text, name) => {
+const getInstanceIndex = utils.tryCatch((text, name) => {
 	return Array.from(text.matchAll(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
 })
 
@@ -202,9 +202,9 @@ const provideDefinition = async (document, position, token) => {
 	// console.log(`Word: ${word}`)
 
 	// @ TODO
-	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0)))
+	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0))) // @ TODO
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
-	// is this a module
+
 	if(regexp.isInstance(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching module: ${word}`)
 		let moduleLocation = getModuleLocation(word)
@@ -224,7 +224,7 @@ const provideDefinition = async (document, position, token) => {
 
 	if(regexp.isModule(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching instance: ${word}`)
-		let instanceLocation = await getMatchInAllFile(word, getModuleIndex)
+		let instanceLocation = await getMatchInAllFile(word, getInstanceIndex)
 		if(instanceLocation) return instanceLocation
 	}
 	// is this import
