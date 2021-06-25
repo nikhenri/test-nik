@@ -64,7 +64,7 @@ const getFileText = async (fileNameWithoutExt) => {
 	}
 	if(!(fileNameWithoutExt in getFileText.textObj)) {
 		let path = await getFilePath(fileNameWithoutExt)
-		console.log(`Reading '${path}'`)
+		//console.log(`Reading '${path}'`)
     	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
 		getFileText.textObj[fileNameWithoutExt] = { path, text }
 	}
@@ -74,9 +74,12 @@ const getFileText = async (fileNameWithoutExt) => {
 
 //----------------------------------------------------------------------------
 const uriToFileNameWithoutExt = tryCatch((uri) => {
-	return path.parse(uri.fsPath).name
+	return filePathToFileNameWithoutExt(uri.fsPath)
 })
-
+//----------------------------------------------------------------------------
+const filePathToFileNameWithoutExt = tryCatch((filePath) => {
+	return path.parse(filePath).name
+})
 //----------------------------------------------------------------------------
 const indexToPosition = tryCatch((text, index) => {
 	let lineSplit = text.substr(0, index).split(/\r\n|\n/)
@@ -93,4 +96,5 @@ module.exports = {
     getFileText,
 	uriToFileNameWithoutExt,
 	indexToPosition,
+	filePathToFileNameWithoutExt,
 };

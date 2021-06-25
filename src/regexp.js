@@ -35,28 +35,27 @@ const wordIsNumber = utils.tryCatch((word) => {
 
 //----------------------------------------------------------------------------
 const isInstance = utils.tryCatch((text, name) => {
-    let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*${name}\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
-	if (matchAll.length) return matchAll
+    return text.match(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "g"))
 })
 
 //----------------------------------------------------------------------------
 const isFunction = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`[\\.| ]+${name}\\s*\\([\\S\\s]*?\\)`))
+	return text.match(new RegExp(`[\\.| ]+\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
 })
 
 //----------------------------------------------------------------------------
 const isTypedef = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?${name}(?:\\s*\\[.*?\\])*\\s+\\w+`))
+	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?\\b${name}\\b(?:\\s*\\[.*?\\])*\\s+\\w+`))
 })
 
 //----------------------------------------------------------------------------
 const isModule = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*module\\s+${name}`))
+	return text.match(new RegExp(`^\\s*module\\s+\\b${name}\\b`))
 })
 
 //----------------------------------------------------------------------------
 const isImport = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*${name}::`))
+	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 })
 //============================================================================
 const getImportNameList = utils.tryCatch((text) => {
@@ -66,7 +65,7 @@ const getImportNameList = utils.tryCatch((text) => {
 	for (let match of groupMatch) {
 		for (let packageStr of match.split(",")) {
 			let packageName = packageStr.trim().split("::")[0]
-			console.log(`Found package ${packageName}`)
+			// console.log(`Found package ${packageName}`)
 			ImportNameList.push(packageName)
 		}
 	}

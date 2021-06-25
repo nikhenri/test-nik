@@ -4,6 +4,7 @@ const vscode = require('vscode')
 const fs = require('fs')
 const utils = require('./utils')
 const regexp = require('./regexp')
+const path = require('path')
 
 //----------------------------------------------------------------------------
 const getFullSignalName = utils.tryCatch((fullLine) => {
@@ -100,12 +101,14 @@ const flashLine = utils.tryCatch((position) => {
 // const getTextAfterPosition = utils.tryCatch((document, position) => {
 // 	return document.getText().substring(document.offsetAt(position))
 // })
-
+//----------------------------------------------------------------------------
+// const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
+// 	return new vscode.Position(document.positionAt(index).line, 0)
+// })
 
 
 //----------------------------------------------------------------------------
 const getModuleLocation  = async (name) => {
-	console.log(`Searching entity: ${name}`)
 	let path = await utils.getFilePath(name)
 	console.log(`FilePath for entity= ${path}`)
 	if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
@@ -114,65 +117,72 @@ const getModuleLocation  = async (name) => {
 
 //----------------------------------------------------------------------------
 const getFunctionIndex = utils.tryCatch((text, name) => {
-    let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
-    if (matchAll.length) return matchAll[0].index
+    return Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
 })
 
 //----------------------------------------------------------------------------
-const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
-	return new vscode.Position(document.positionAt(index).line, 0)
+const getModuleIndex = utils.tryCatch((text, name) => {
+	return Array.from(text.matchAll(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
 })
 
 //----------------------------------------------------------------------------
-const getFunctionLocation = async (document, textt, name) => {
+const getTypeIndex = utils.tryCatch((text, name) => {
+    return Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
+})
 
-	console.log(`Searching function: ${name}`)
+//----------------------------------------------------------------------------
+const getLocation = async (fileNameWithoutExt, name, funcMatchIndex) => {
+	console.log(`Searching : ${name}`)
+	// check current file
+	let matchInFileObj = await getMatchInFile(fileNameWithoutExt, name, funcMatchIndex)
 
-	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
-	let {text, path} = await utils.getFileText(fileNameWithoutExt)
-	let scanLileNameWithoutExtList = [fileNameWithoutExt, ...regexp.getImportNameList(text)]
-	for (let scanLileNameWithoutExt of scanLileNameWithoutExtList) {
-		console.log(`Scanning ${scanLileNameWithoutExt}`)
-		let {text, path} = await utils.getFileText(scanLileNameWithoutExt)
-		let functionIndex = getFunctionIndex(text, name)
-		if(functionIndex) {
-			let position = utils.indexToPosition(text, functionIndex)
-			console.log(`Found match in ${path}, line: ${position.line}, char: ${position.character}`)
-			return new vscode.Location(vscode.Uri.file(path), position)
-		}
+	if(!matchInFileObj)
+		matchInFileObj = await getMatchInImport(fileNameWithoutExt, name, funcMatchIndex)
+
+	if(matchInFileObj) {
+		let position = utils.indexToPosition(matchInFileObj.text, matchInFileObj.match.index)
+		console.log(`Found match in ${matchInFileObj.path}, line: ${position.line}, char: ${position.character}`)
+		return new vscode.Location(vscode.Uri.file(matchInFileObj.path), position)
 	}
-	console.log(`Can't found function: ${name}`)
+
+	console.log(`Can't found: ${name}`)
+}
+//----------------------------------------------------------------------------
+// get: nameFile, name, matchFunction
+// return Object:
+// .path = file path
+// .text = fileText
+// .match = MatchAll object from regEx
+const getMatchInImport = async (fileNameWithoutExt, name, funcMatchIndex) => {
+	let fileTextObj = await utils.getFileText(fileNameWithoutExt)
+	for (let importfileNameWithoutExt of regexp.getImportNameList(fileTextObj.text)) {
+		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, name, funcMatchIndex)
+		if(matchInFileObj) return matchInFileObj
+	}
+}
+//----------------------------------------------------------------------------
+// get: nameFile, name, matchFunction
+// .path = file path
+// .text = fileText
+// .match = MatchAll object from regEx
+const getMatchInFile = async (fileNameWithoutExt, name, funcMatchIndex) => {
+	//console.log(`Scanning ${fileNameWithoutExt}`)
+	let fileTextObj = await utils.getFileText(fileNameWithoutExt)
+	fileTextObj.match = funcMatchIndex(fileTextObj.text, name)
+	if(fileTextObj.match.length)
+		return fileTextObj
 }
 
 //----------------------------------------------------------------------------
-const getTypeLocation = async (document, text, name) => {
-	console.log(`Searching type: ${name}`)
-	let typeIndex = getTypeIndex(text, name)
-	if(typeIndex) return new vscode.Location(document.uri, indexToPositionStartOfLine(document, typeIndex))
-	let importFileNameList = getImportName(text)
-	for (let importFileName of importFileNameList) {
-		console.log(`Checking import '${importFileName}'`)
-		let filePath = await utils.getFilePath(importFileName)
-		let textImport = fs.readFileSync(filePath, 'utf8')
-		typeIndex = getTypeIndex(textImport, name)
-		let lineNumber = textImport.substr(0, typeIndex).split(/\r\n|\n/).length - 1
-		setTimeout(()=>{flashLine(new vscode.Position(lineNumber, 0))}, 100)
-		if(typeIndex) return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber, 0))
-	}
-	console.log(`Can't found type: ${name}`)
-}
-//----------------------------------------------------------------------------
-const getInstanceLocation = async (document, text, name) => {
-	console.log(`Searching instance: ${name}`)
+const getMatchInAllFile = async (name, funcMatchIndex) => {
 	let filePathList = await utils.getFilePath()
 	let locationList = []
 	for (let filePath of filePathList) {
-		let text = fs.readFileSync(filePath, 'utf8')
-		let instanceList = isInstance(text, name)
-		if (isInstance(text, name)) {
-			for (let instance of instanceList) {
-				let lineNumber = text.substr(0, instance.index).split(/\r\n|\n/).length - 1
-				locationList.push(new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber, 0)))
+		let matchInFileObj = await getMatchInFile(utils.filePathToFileNameWithoutExt(filePath), name, funcMatchIndex)
+		if(matchInFileObj) {
+			for (let match of matchInFileObj.match) {
+				let position = utils.indexToPosition(matchInFileObj.text, match.index)
+				locationList.push(new vscode.Location(vscode.Uri.file(matchInFileObj.path), position))
 			}
 		}
 	}
@@ -181,11 +191,6 @@ const getInstanceLocation = async (document, text, name) => {
 	}
 	console.log(`Can't found instance: ${name}`)
 }
-//----------------------------------------------------------------------------
-const getTypeIndex = utils.tryCatch((text, name) => {
-    let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
-    if (matchAll.length) return matchAll[0].index
-})
 
 //----------------------------------------------------------------------------
 const provideDefinition = async (document, position, token) => {
@@ -198,25 +203,28 @@ const provideDefinition = async (document, position, token) => {
 
 	// @ TODO
 	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0)))
-
+	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
 	// is this a module
 	if(regexp.isInstance(lineOfWordAndTextAfter, word)) {
+		console.log(`Searching module: ${word}`)
 		let moduleLocation = getModuleLocation(word)
 		if(moduleLocation) return moduleLocation
 	}
-
 	if(regexp.isFunction(lineOfWordAndTextAfter, word)) {
-		let functionLocation = await getFunctionLocation(document, document.getText(), word)
+		console.log(`Searching function: ${word}`)
+		let functionLocation = await getLocation(fileNameWithoutExt, word, getFunctionIndex)
 		if(functionLocation) return functionLocation
 	}
 
 	if(regexp.isTypedef(lineOfWordAndTextAfter, word)) {
-		let typeLocation = await getTypeLocation(document, document.getText(), word)
+		console.log(`Searching typeDef: ${word}`)
+		let typeLocation = await getLocation(fileNameWithoutExt, word, getTypeIndex)
 		if(typeLocation) return typeLocation
 	}
 
 	if(regexp.isModule(lineOfWordAndTextAfter, word)) {
-		let instanceLocation = await getInstanceLocation(document, document.getText(), word)
+		console.log(`Searching instance: ${word}`)
+		let instanceLocation = await getMatchInAllFile(word, getModuleIndex)
 		if(instanceLocation) return instanceLocation
 	}
 	// is this import
