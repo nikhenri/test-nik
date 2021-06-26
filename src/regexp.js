@@ -58,19 +58,26 @@ const isImport = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 })
 //============================================================================
-const getImportNameList = utils.tryCatch((text) => {
-    let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
-    let groupMatch = matchAll.map(x => x[1])
-	let ImportNameList = []
-	for (let match of groupMatch) {
-		for (let packageStr of match.split(",")) {
-			let packageName = packageStr.trim().split("::")[0]
-			// console.log(`Found package ${packageName}`)
-			ImportNameList.push(packageName)
-		}
-	}
-	return ImportNameList
+//----------------------------------------------------------------------------
+const getFunctionMatch = utils.tryCatch((text, name) => {
+    return Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
 })
+
+//----------------------------------------------------------------------------
+const getInstanceMatch = utils.tryCatch((text, name) => {
+	return Array.from(text.matchAll(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
+})
+
+//----------------------------------------------------------------------------
+const getTypeMatch = utils.tryCatch((text, name) => {
+    return Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
+})
+//----------------------------------------------------------------------------
+// const getImportMatch = utils.tryCatch((text) => {
+//     return Array.from(text.matchAll(/^[ ]*import\s+[^;]*/gm))
+// })
+//============================================================================
+
 
 
 
@@ -83,6 +90,8 @@ module.exports = {
     isTypedef,
     isModule,
     isImport,
-    getImportNameList,
-
+    // getImportMatch,
+    getFunctionMatch,
+    getInstanceMatch,
+    getTypeMatch,
 }
