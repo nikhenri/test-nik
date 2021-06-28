@@ -91,11 +91,16 @@ const getStruct = async (structName, filePath) => {
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-const flashLine = utils.tryCatch((position) => {
-    let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
-    let rangeOption = {range: new vscode.Range(new vscode.Position(position.line, 0), new vscode.Position(position.line, 999))}
-    vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
-    setTimeout(()=>{decoration.dispose()}, 2000)
+const flashLine = utils.tryCatch((line) => {
+	let event = vscode.window.onDidChangeTextEditorSelection(() => {
+		setTimeout(()=>{
+			let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
+			let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
+			vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
+			setTimeout(()=>{decoration.dispose()}, 1500)
+		}, 100)
+		event.dispose()
+	})
 })
 //----------------------------------------------------------------------------
 // const getTextAfterPosition = utils.tryCatch((document, position) => {
@@ -105,15 +110,6 @@ const flashLine = utils.tryCatch((position) => {
 // const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
 // 	return new vscode.Position(document.positionAt(index).line, 0)
 // })
-
-
-//----------------------------------------------------------------------------
-const getModuleLocation  = async (name) => {
-	let path = await utils.getFilePath(name)
-	console.log(`FilePath for entity= ${path}`)
-	if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
-	console.log(`Can't found entity: ${name}`)
-}
 
 //----------------------------------------------------------------------------
 const getLocation = async (fileNameWithoutExt, funcMatch) => {
@@ -173,7 +169,7 @@ const getMatchInAllFile = async (name, funcMatch) => {
 	let filePathList = await utils.getFilePath()
 	let locationList = []
 	for (let filePath of filePathList) {
-		let matchInFileObj = await getMatchInFile(utils.filePathToFileNameWithoutExt(filePath), name, funcMatch)
+		let matchInFileObj = await getMatchInFile(utils.filePathToFileNameWithoutExt(filePath), funcMatch)
 		if(matchInFileObj) {
 			for (let match of matchInFileObj.match) {
 				let position = utils.indexToPosition(matchInFileObj.text, match.index)
@@ -190,58 +186,64 @@ const getMatchInAllFile = async (name, funcMatch) => {
 //----------------------------------------------------------------------------
 const provideDefinition = async (document, position, token) => {
 	console.log("CTRL")
-	utils.getFileText()
+	utils.getFileText() // init
 
+	let location = await searchLocation(document, position)
+	if(location) {
+		if(!Array.isArray(location)) flashLine(location.range.start.line)
+		return location
+	}
+	
+	console.log("Found nothing")
+}
+
+//----------------------------------------------------------------------------
+const searchLocation = async (document, position) => {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(regexp.wordIsNumber(word) || regexp.wordIsReserved(word)) return
 	// console.log(`Word: ${word}`)
 
-	// @ TODO
 	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0))) // @ TODO
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
+	let location
 
-	if(regexp.isInstance(lineOfWordAndTextAfter, word)) {
+	// Module instance ?
+	if(regexp.isModuleInstance(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching module: ${word}`)
-		let moduleLocation = getModuleLocation(word)
-		if(moduleLocation) return moduleLocation
+		location = getLocation(fileNameWithoutExt, (text) => {return regexp.getModuleMatch(text)})
+		if(location) return location
 	}
+	// Function ?
 	if(regexp.isFunction(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching function: ${word}`)
-		let functionLocation = await getLocation(fileNameWithoutExt, (text)=>{return regexp.getFunctionMatch(text, word)})
-		if(functionLocation) return functionLocation
+		location = await getLocation(fileNameWithoutExt, (text)=>{return regexp.getFunctionMatch(text, word)})
+		if(location) return location
 	}
-
+	// Typedef (struct, enum) ?
 	if(regexp.isTypedef(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching typeDef: ${word}`)
-		let typeLocation = await getLocation(fileNameWithoutExt, (text)=>{return regexp.getTypeMatch(text, word)})
-		if(typeLocation) return typeLocation
+		location = await getLocation(fileNameWithoutExt, (text)=>{return regexp.getTypeMatch(text, word)})
+		if(location) return location
 	}
-
-	if(regexp.isModule(lineOfWordAndTextAfter, word)) {
+	// Module decalaration ?
+	if(regexp.isModuleDeclaration(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching instance: ${word}`)
-		let instanceLocation = await getMatchInAllFile(word, regexp.getInstanceMatch)
-		if(instanceLocation) return instanceLocation
+		location = await getMatchInAllFile(word, (text)=>{return regexp.getInstanceMatch(text, word)})
+		if(location) return location
 	}
-	// is this import
+	// Import ?
 	if (regexp.isImport(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching package: ${word}`)
-		let path = await utils.getFilePath(word)
-		console.log(`FilePath for package= ${path}`)
-		if(path) return new vscode.Location(vscode.Uri.file(path), new vscode.Position(0, 0))
+		location = await getLocation(fileNameWithoutExt, (text) => {return regexp.getPackageMatch(text)})
+		if(location) return location
 	}
-	// is this word
-	console.log(`Search for 1er line of ${word}`)
-	let text = document.getText()
-	let matchAll = Array.from(text.matchAll(new RegExp(`.*${word}`, "g")))
-	let firstLinePostition = document.positionAt(matchAll[0].index)
-	if(!firstLinePostition.isEqual(new vscode.Position(position.line, 0))) {
-		console.log("go to !")
-		flashLine(firstLinePostition)
-		return new vscode.Location(document.uri, firstLinePostition)
-	}
-	console.log("Found nothing")
-}
 
+	// is this word
+	console.log(`Searching 1er line of ${word}`)
+	location = await getLocation(fileNameWithoutExt, (text) => {return regexp.getWordOccuranceMatch(text, word)})
+
+	return location
+}
 //----------------------------------------------------------------------------
 const provideCompletionItems = utils.tryCatch((document, position) => {
 	console.log(".")
@@ -279,12 +281,11 @@ const handleTerminalLink = utils.tryCatch((link) => {
 })
 //----------------------------------------------------------------------------
 const activate = utils.tryCatch((context) => {
-    let subscriptions = [
-                        vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'),
-						vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition}),
-                        vscode.window.registerTerminalLinkProvider({provideTerminalLinks, handleTerminalLink})
-                        ]
-    context.subscriptions.push(subscriptions )
+    context.subscriptions.push([
+		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems}, '.'),
+		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition}),
+		vscode.window.registerTerminalLinkProvider({provideTerminalLinks, handleTerminalLink})
+	])
 })
 //----------------------------------------------------------------------------
 

@@ -45,7 +45,6 @@ const getFilePath = async (fileNameWithoutExt)=> {
 		console.log("Updating findFiles...")
         let finFiles = await vscode.workspace.findFiles("**/*.*v")
 		getFilePath.listOfPath = finFiles.map(x => x.fsPath)
-		console.log("Done")
 
 		if (!fileNameWithoutExt)
 			filePath = getFilePath.listOfPath

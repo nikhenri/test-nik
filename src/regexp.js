@@ -34,7 +34,7 @@ const wordIsNumber = utils.tryCatch((word) => {
 })
 
 //----------------------------------------------------------------------------
-const isInstance = utils.tryCatch((text, name) => {
+const isModuleInstance = utils.tryCatch((text, name) => {
     return text.match(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "g"))
 })
 
@@ -45,19 +45,24 @@ const isFunction = utils.tryCatch((text, name) => {
 
 //----------------------------------------------------------------------------
 const isTypedef = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*(?:input\\s+|output\\s+|inout\\s+)?\\b${name}\\b(?:\\s*\\[.*?\\])*\\s+\\w+`))
+	return text.match(new RegExp(`^[ ]*(?:input\\s+|output\\s+|inout\\s+)?\\b${name}\\b(?:\\s*\\[.*?\\])*\\s+\\w+`))
 })
 
 //----------------------------------------------------------------------------
-const isModule = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*module\\s+\\b${name}\\b`))
+const isModuleDeclaration = utils.tryCatch((text, name) => {
+	return text.match(new RegExp(`^[ ]*module\\s+\\b${name}\\b`))
 })
 
 //----------------------------------------------------------------------------
 const isImport = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`^\\s*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
+	return text.match(new RegExp(`^[ ]*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 })
 //============================================================================
+const getModuleMatch = utils.tryCatch((text, name) => {
+    // return Array.from(text.matchAll(new RegExp(`^[ ]*module\\s+\\b${name}\\b`, "gm")))
+    return Array.from(text.matchAll(/^[ ]*module\s+\w+\s*/gm))
+})
+
 //----------------------------------------------------------------------------
 const getFunctionMatch = utils.tryCatch((text, name) => {
     return Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
@@ -76,6 +81,14 @@ const getTypeMatch = utils.tryCatch((text, name) => {
 // const getImportMatch = utils.tryCatch((text) => {
 //     return Array.from(text.matchAll(/^[ ]*import\s+[^;]*/gm))
 // })
+//----------------------------------------------------------------------------
+const getPackageMatch = utils.tryCatch((text) => {
+    return Array.from(text.matchAll(/^[ ]*package\s+\w+\s*;/gm))
+})
+//----------------------------------------------------------------------------
+const getWordOccuranceMatch = utils.tryCatch((text, name) => {
+	return Array.from(text.matchAll(new RegExp(`.*${name}`, "g")))
+})
 //============================================================================
 
 
@@ -85,13 +98,16 @@ const getTypeMatch = utils.tryCatch((text, name) => {
 module.exports = {
     wordIsReserved,
     wordIsNumber,
-    isInstance,
+    isModuleInstance,
     isFunction,
     isTypedef,
-    isModule,
+    isModuleDeclaration,
     isImport,
     // getImportMatch,
     getFunctionMatch,
     getInstanceMatch,
     getTypeMatch,
+    getModuleMatch,
+    getPackageMatch,
+    getWordOccuranceMatch,
 }
