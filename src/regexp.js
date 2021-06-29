@@ -40,7 +40,8 @@ const isModuleInstance = utils.tryCatch((text, name) => {
 
 //----------------------------------------------------------------------------
 const isFunction = utils.tryCatch((text, name) => {
-	return text.match(new RegExp(`[\\.| ]+\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
+	// return text.match(new RegExp(`[\\.| ]+\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
+	return text.match(new RegExp(`(?<!\\s\\.)\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
 })
 
 //----------------------------------------------------------------------------
@@ -89,6 +90,11 @@ const getPackageMatch = utils.tryCatch((text) => {
 const getWordOccuranceMatch = utils.tryCatch((text, name) => {
 	return Array.from(text.matchAll(new RegExp(`.*${name}`, "g")))
 })
+//----------------------------------------------------------------------------
+const getWordFirstOccuranceMatch = utils.tryCatch((text, name) => {
+    let match = getWordOccuranceMatch(text, name)
+    if (match.length) return [match[0]]
+})
 //============================================================================
 
 
@@ -110,4 +116,5 @@ module.exports = {
     getModuleMatch,
     getPackageMatch,
     getWordOccuranceMatch,
+    getWordFirstOccuranceMatch,
 }

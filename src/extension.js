@@ -119,15 +119,6 @@ const getStruct = async (structName, filePath) => {
 }
 
 //----------------------------------------------------------------------------
-// const getTextAfterPosition = utils.tryCatch((document, position) => {
-// 	return document.getText().substring(document.offsetAt(position))
-// })
-//----------------------------------------------------------------------------
-// const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
-// 	return new vscode.Position(document.positionAt(index).line, 0)
-// })
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 const provideTerminalLinks = utils.tryCatch((context, token) => {
@@ -210,3 +201,13 @@ out.appendLine('hello Nik')
 	let bb = vscode.window.activeTextEditor.document
 	let aaa = vscode.window.visibleTextEditors
 	*/
+
+	
+//----------------------------------------------------------------------------
+// const getTextAfterPosition = utils.tryCatch((document, position) => {
+// 	return document.getText().substring(document.offsetAt(position))
+// })
+//----------------------------------------------------------------------------
+// const indexToPositionStartOfLine = utils.tryCatch((document, index) => {
+// 	return new vscode.Position(document.positionAt(index).line, 0)
+// })
