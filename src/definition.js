@@ -26,6 +26,7 @@ const flashLine = utils.tryCatch((locationList) => {
 				let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
 				let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
 				event.textEditor.setDecorations(decoration, [rangeOption])
+				// event.textEditor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop)
 				setTimeout(()=>{decoration.dispose()}, 1500)
 			}
 		}

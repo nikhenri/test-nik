@@ -128,19 +128,23 @@ const getStruct = async (structName, filePath) => {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 const provideTerminalLinks = utils.tryCatch((context, token) => {
-    const startIndex = context.line.indexOf('help');
-    if (startIndex === -1) return []
-    console.log(`context.line >> ${context.line}`)
-    return [{startIndex: startIndex, length: 'link'.length}]
+    console.log(`Terminal line: ${context.line}`)
+	// #    Time: 0 fs  Iteration: 0  Instance: /tcp_dma_tb/DUT/qmngr_top/local_pointers_if File: C:/src/queue_manager/src/qmngr_top.sv Line: 451
+	let matchArray = Array.from(context.line.matchAll(new RegExp(`([^ ]+) Line: (\\d+)`, "g")))
+	if (matchArray.length) {
+		return [{startIndex: matchArray[0].index,
+			     length: matchArray[0][0].length, // + " Line: "
+				 uri: vscode.Uri.file(matchArray[0][1]),
+				 line: matchArray[0][2]}]
+	}
 })
 //----------------------------------------------------------------------------
 const handleTerminalLink = utils.tryCatch((link) => {
-    console.log(`link >> ${JSON.stringify(link)}`)
-    vscode.workspace.openTextDocument(vscode.Uri.file('C://Users//nhenri//Desktop//tcp_ip_ip_vs_code_ext//src//common//pkg//qmngr_pkg.sv')).then(
-        (doc) => vscode.window.showTextDocument(doc)
-    )
+    console.log(`link: ${JSON.stringify(link)}`)
+	let pos = new vscode.Position(parseInt(link.line) - 1, 0)
+    vscode.workspace.openTextDocument(link.uri)
+	.then((doc) => vscode.window.showTextDocument(doc, {selection: new vscode.Range(pos, pos)}))
 })
-
 //----------------------------------------------------------------------------
 // this method is called when your extension is deactivated
 const deactivate = utils.tryCatch(() => {})
