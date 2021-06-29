@@ -88,7 +88,7 @@ const getPackageMatch = utils.tryCatch((text) => {
 })
 //----------------------------------------------------------------------------
 const getWordOccuranceMatch = utils.tryCatch((text, name) => {
-	return Array.from(text.matchAll(new RegExp(`.*${name}`, "g")))
+	return Array.from(text.matchAll(new RegExp(`.*\b${name}\b`, "g")))
 })
 //----------------------------------------------------------------------------
 const getWordFirstOccuranceMatch = utils.tryCatch((text, name) => {

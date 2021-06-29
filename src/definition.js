@@ -134,26 +134,14 @@ const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
 // .match = MatchAll object from regEx
 const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
 	let fileTextObj = await utils.getFileText(fileNameWithoutExt)
-	for (let importfileNameWithoutExt of getImportNameList(fileTextObj.text)) {
+	for (let importfileNameWithoutExt of utils.getImportNameList(fileTextObj.text)) {
 		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
 		if(matchInFileObj) return matchInFileObj
 	}
 }
 
 //----------------------------------------------------------------------------
-const getImportNameList = utils.tryCatch((text) => {
-	let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
-	let groupMatch = matchAll.map(x => x[1])
-	let ImportNameList = []
-	for (let match of groupMatch) {
-		for (let packageStr of match.split(",")) {
-			let packageName = packageStr.trim().split("::")[0]
-			// console.log(`Found package ${packageName}`)
-			ImportNameList.push(packageName)
-		}
-	}
-	return ImportNameList
-})
+
 
 //----------------------------------------------------------------------------
 

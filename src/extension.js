@@ -41,9 +41,10 @@ const provideCompletionItems = utils.tryCatch((document, position) => {
 //----------------------------------------------------------------------------
 
 const getFullSignalName = utils.tryCatch((fullLine) => {
-	let match = fullLine.match(/[\w\.]+\w*\.$/g) // start with a letter, followed by any nb of caracter
+	let match = fullLine.match(/[\w\.\[\]]+\.$/g) // start with a letter, followed by any nb of caracter
 	if(match) {
-		return match[0].slice(0, -1)}
+		return (match[0].slice(0, -1).split("["))[0]
+	}
 })
 
 //----------------------------------------------------------------------------
@@ -85,7 +86,7 @@ const getStructInFile = utils.tryCatch((structName, filePath) => {
 	let struct_list =  getStructList(text)
 
 	for (let struct of struct_list) {
-		console.log(`Scanning struct '${struct}'`)
+		// console.log(`Scanning struct '${struct}'`)
 		if(getStructName(struct) == structName) {
 			console.log(`Found struct`)
 			let completionList = []
@@ -99,20 +100,25 @@ const getStructInFile = utils.tryCatch((structName, filePath) => {
 })
 
 //----------------------------------------------------------------------------
+// @TODO need to add an object of 'scanned' to avoid recursive scan
 const getStruct = async (structName, filePath) => {
-	console.log(`Searching struct in '${filePath}'`)
+	let filePathToFileNameWithoutExt = utils.filePathToFileNameWithoutExt(filePath)
+	console.log(`Searching struct in '${filePathToFileNameWithoutExt}'`)
 	let returnFromFile = getStructInFile(structName, filePath)
 	if (returnFromFile) {
 		return returnFromFile
 	}
 	let text = fs.readFileSync(filePath, 'utf8')
-	let importFileNameList = getImportName(text)
+	let importFileNameList = utils.getImportNameList(text)
 	for (let importFileName of importFileNameList) {
-		console.log(`Checking import '${importFileName}'`)
-		let path = await utils.getFilePath(importFileName)
-		let returnValue = getStruct(structName, path)
-		if (returnValue) {
-			return returnValue
+
+		if(filePathToFileNameWithoutExt != importFileName) {
+			console.log(`Checking import '${importFileName}'`)
+			let path = await utils.getFilePath(importFileName)
+			let returnValue = await getStruct(structName, path)
+			if (returnValue) {
+				return returnValue
+			}
 		}
 	}
 	console.log(`Cant find '${structName}'`)
@@ -202,7 +208,7 @@ out.appendLine('hello Nik')
 	let aaa = vscode.window.visibleTextEditors
 	*/
 
-	
+
 //----------------------------------------------------------------------------
 // const getTextAfterPosition = utils.tryCatch((document, position) => {
 // 	return document.getText().substring(document.offsetAt(position))

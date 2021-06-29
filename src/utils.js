@@ -87,6 +87,20 @@ const indexToPosition = tryCatch((text, index) => {
 	return new vscode.Position(line, char)
 })
 //----------------------------------------------------------------------------
+const getImportNameList = tryCatch((text) => {
+	let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
+	let groupMatch = matchAll.map(x => x[1])
+	let ImportNameList = []
+	for (let match of groupMatch) {
+		for (let packageStr of match.split(",")) {
+			let packageName = packageStr.trim().split("::")[0]
+			// console.log(`Found package ${packageName}`)
+			ImportNameList.push(packageName)
+		}
+	}
+	return ImportNameList
+})
+//----------------------------------------------------------------------------
 module.exports = {
     tryCatch,
 	tryCatchAsync,
@@ -96,4 +110,5 @@ module.exports = {
 	uriToFileNameWithoutExt,
 	indexToPosition,
 	filePathToFileNameWithoutExt,
+	getImportNameList,
 };
