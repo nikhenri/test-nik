@@ -7,26 +7,29 @@ const provideDefinition = async (document, position, token) => {
 	console.log("CTRL")
 	utils.getFileText() // init
 
-	let location = await searchLocation(document, position)
-	if(location) {
-		if(location.length == 1)
-            flashLine(location[0].range.start.line)
-		return location
+	let locationList = await searchLocation(document, position)
+	if(locationList && locationList.length) {
+        flashLine(locationList)
+		return locationList
 	}
-	
+
 	console.log("Found nothing")
 }
 
 //----------------------------------------------------------------------------
-const flashLine = utils.tryCatch((line) => {
-	let event = vscode.window.onDidChangeTextEditorSelection(() => {
-		setTimeout(()=>{
-			let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
-			let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
-			vscode.window.activeTextEditor.setDecorations(decoration, [rangeOption])
-			setTimeout(()=>{decoration.dispose()}, 1500)
-		}, 100)
-		event.dispose()
+const flashLine = utils.tryCatch((locationList) => {
+
+	let onDidChangeTextEditorSelectioEvent = vscode.window.onDidChangeTextEditorSelection((event) => {
+		if(locationList.length == 1) {
+			if(locationList[0].uri.fsPath != event.textEditor.document.uri.fsPath || locationList[0].range.start.line == event.selections[0].start.line) {
+				let line = locationList[0].range.start.line
+				let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
+				let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
+				event.textEditor.setDecorations(decoration, [rangeOption])
+				setTimeout(()=>{decoration.dispose()}, 1500)
+			}
+		}
+		onDidChangeTextEditorSelectioEvent.dispose()
 	})
 })
 
@@ -34,11 +37,12 @@ const flashLine = utils.tryCatch((line) => {
 const searchLocation = async (document, position) => {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(regexp.wordIsNumber(word) || regexp.wordIsReserved(word)) return
-	// console.log(`Word: ${word}`)
+	console.log(`Word: ${word}`)
 
 	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0))) // @ TODO
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
 	let location
+
 
 	// Module instance ?
 	if(regexp.isModuleInstance(lineOfWordAndTextAfter, word)) {
@@ -74,25 +78,9 @@ const searchLocation = async (document, position) => {
 	// is this word
 	console.log(`Searching 1er line of ${word}`)
 	location = await getLocation(fileNameWithoutExt, (text) => {return regexp.getWordFirstOccuranceMatch(text, word)})
-
-	return location
+	if(location[0].range.start.line != position.line)
+		return location
 }
-//----------------------------------------------------------------------------
-// const getMatchInAllFile = async (funcMatch) => {
-// 	let filePathList = await utils.getFilePath()
-// 	let locationList = []
-// 	for (let filePath of filePathList) {
-// 		let matchInFileObj = await getMatchInFile(utils.filePathToFileNameWithoutExt(filePath), funcMatch)
-// 		if(matchInFileObj) {
-// 			for (let match of matchInFileObj.match) {
-// 				let position = utils.indexToPosition(matchInFileObj.text, match.index)
-// 				locationList.push(new vscode.Location(vscode.Uri.file(matchInFileObj.path), position))
-// 			}
-// 		}
-// 	}
-// 	if(locationList.length)
-// 		return locationList
-// }
 
 //----------------------------------------------------------------------------
 const getLocation = async (fileNameWithoutExt, funcMatch) => {
@@ -100,11 +88,13 @@ const getLocation = async (fileNameWithoutExt, funcMatch) => {
     let locationList = []
 
     let fileNameWithoutExtList
-    if(fileNameWithoutExt) 
+    if(fileNameWithoutExt)
         fileNameWithoutExtList = [fileNameWithoutExt]
-    else
-        fileNameWithoutExtList = await utils.getFilePath().map(x => utils.filePathToFileNameWithoutExt(x))
-        
+    else {
+		let filePathList = await utils.getFilePath()
+        fileNameWithoutExtList = filePathList.map(x => utils.filePathToFileNameWithoutExt(x))
+	}
+
     for (let name of fileNameWithoutExtList) {
         let matchInFileObj = await getMatchInFile(name, funcMatch)
 
