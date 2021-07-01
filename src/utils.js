@@ -88,17 +88,9 @@ const indexToPosition = tryCatch((text, index) => {
 })
 //----------------------------------------------------------------------------
 const getImportNameList = tryCatch((text) => {
-	let matchAll = Array.from(text.matchAll(/^\s*import\s*?(.*);$/gm))
-	let groupMatch = matchAll.map(x => x[1])
-	let ImportNameList = []
-	for (let match of groupMatch) {
-		for (let packageStr of match.split(",")) {
-			let packageName = packageStr.trim().split("::")[0]
-			// console.log(`Found package ${packageName}`)
-			ImportNameList.push(packageName)
-		}
-	}
-	return ImportNameList
+	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
+	if (matchAll.length) return  matchAll.map(x => x[1])
+	return matchAll
 })
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
