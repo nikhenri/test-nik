@@ -59,7 +59,7 @@ const isImport = utils.tryCatch((text, name) => {
 	return text.match(new RegExp(`^[ ]*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 })
 //============================================================================
-const getModuleMatch = utils.tryCatch((text, name) => {
+const getModuleMatch = utils.tryCatch((text) => {
     // return Array.from(text.matchAll(new RegExp(`^[ ]*module\\s+\\b${name}\\b`, "gm")))
     return Array.from(text.matchAll(/^[ ]*module\s+\w+\s*/gm))
 })
@@ -88,12 +88,13 @@ const getPackageMatch = utils.tryCatch((text) => {
 })
 //----------------------------------------------------------------------------
 const getWordOccuranceMatch = utils.tryCatch((text, name) => {
-	return Array.from(text.matchAll(new RegExp(`.*\b${name}\b`, "g")))
+	return Array.from(text.matchAll(new RegExp(`.*\\b${name}\\b`, "g")))
 })
 //----------------------------------------------------------------------------
 const getWordFirstOccuranceMatch = utils.tryCatch((text, name) => {
     let match = getWordOccuranceMatch(text, name)
     if (match.length) return [match[0]]
+    return match
 })
 //============================================================================
 

@@ -1,7 +1,6 @@
 console.log('Entering extension.js...')
 
 const vscode = require('vscode')
-const fs = require('fs')
 const utils = require('./utils')
 const definition = require('./definition')
 const terminal = require('./terminal')

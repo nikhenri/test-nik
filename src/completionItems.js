@@ -3,113 +3,129 @@ const fs = require('fs')
 const utils = require('./utils')
 
 //----------------------------------------------------------------------------
-const provideCompletionItems = utils.tryCatch((document, position) => {
+const provideCompletionItems = async (document, position) => {
 	console.log(".")
+	utils.getFileText() // init
+
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
-	if (!linePrefix.endsWith('.')) return
+	if (linePrefix.endsWith('.') && isStructAccess(linePrefix)) {
+		let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
+		let groupMatch = getStructSectionWithoutIndex(linePrefix)
+        let text = document.getText()
+		for (let signalName of groupMatch) {
+			console.log(`>> ${signalName}`)
 
-	let fullSignalName = getFullSignalName(linePrefix)
-	if(fullSignalName) {
-		console.log(`searching for variable '${fullSignalName}'`)
-		if(fullSignalName.split('.').length > 1) {
-			console.log(`Dont support multi-member, exiting`)
-			return
+			let structTypeName = getStructTypeName(text, signalName)
+			console.log(`** ${structTypeName}`)
+			let structDeclaration = await searchStruct(structTypeName, fileNameWithoutExt)
+			console.log(`++ ${JSON.stringify(structDeclaration)}`)
+            if(groupMatch[groupMatch.length-1] == signalName) { // last element
+                let completionList = []
+                for (let structMember of getStructMemberName(structDeclaration.struct)) {
+                    console.log(`Found member ${structMember}`)
+                    completionList.push(new vscode.CompletionItem(structMember))
+                }
+                return completionList
+            } else {
+                console.log("here");
+                text = structDeclaration.struct
+                fileNameWithoutExt = structDeclaration.fileNameWithoutExt
+            }
 		}
-
-		let text = document.getText()
-
-		let declaration_type = getSignalTypeName(text, fullSignalName)
-		console.log(`Type is '${declaration_type}'`)
-		return getStruct(declaration_type, document.fileName)
 	}
+}
+
+//----------------------------------------------------------------------------
+const isStructAccess = utils.tryCatch((text) => {
+	return text.match(/[\w\.\[\]]+\.$/g)
 })
 //----------------------------------------------------------------------------
-
-const getFullSignalName = utils.tryCatch((fullLine) => {
-	let match = fullLine.match(/[\w\.\[\]]+\.$/g) // start with a letter, followed by any nb of caracter
-	if(match) {
-		return (match[0].slice(0, -1).split("["))[0]
-	}
+const getStructSectionWithoutIndex = utils.tryCatch((text) => {
+	let matchAll = Array.from(text.matchAll(/(\w+)(?:\[.*?\])?\./g))
+	let groupMatch = matchAll.map(x => x[1])
+	return groupMatch
 })
 
 //----------------------------------------------------------------------------
-const getSignalTypeName = utils.tryCatch((str, signalName) => {
+const getStructTypeName = utils.tryCatch((str, signalName) => {
 	// first word that is not input | output | inout
     let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")))
-    let signalTypeName = matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
-	return signalTypeName
+	if (matchAll.length) return matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
 })
 
 //----------------------------------------------------------------------------
-const getStructList = utils.tryCatch((str) => {
-	// 'struct' with or without 'packed' { * } 'word';
-	let structList = []
-    let matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm))
-    if (matchAll.length) {
-        structList = matchAll.map(x => x[0])
+// @TODO need to add an object of 'scanned' to avoid recursive scan
+const searchStruct = async (structTypeName, fileNameWithoutExt) => {
+	// let filePathToFileNameWithoutExt = utils.filePathToFileNameWithoutExt(filePath)
+	// console.log(`Searching struct in '${filePathToFileNameWithoutExt}'`)
+    let fileTextObj = await utils.getFileText(fileNameWithoutExt)
+	let struct = searchStructInText(fileTextObj.text, structTypeName)
+	if (struct) {
+		return {struct, fileNameWithoutExt:fileNameWithoutExt}
 	}
-	return structList
-})
+	let importFileNameList = utils.getImportNameList(fileTextObj.text)
+	for (let importFileName of importFileNameList) {
+		if(fileNameWithoutExt != importFileName) {
+			console.log(`Checking import '${importFileName}'`)
+			fileTextObj = await utils.getFileText(importFileName)
+			struct = searchStructInText(fileTextObj.text, structTypeName)
+			if (struct) {
+				return {struct, fileNameWithoutExt:importFileName}
+			}
+		}
+	}
+	console.log(`Cant find '${structTypeName}'`)
+}
 
+//----------------------------------------------------------------------------
+const searchStructInText = utils.tryCatch((text, structTypeName) => {
+	let struct_list =  getStructList(text)
+
+	for (let struct of struct_list) {
+		// console.log(`Scanning struct '${struct}'`)
+		if(getStructName(struct) == structTypeName) {
+			console.log(`Found struct`)
+			return struct
+		}
+	}
+})
 //----------------------------------------------------------------------------
 const getStructName = utils.tryCatch((str) => {
 	return str.match(/}\s*(\w+)\s*;/)[1]
 })
 
 //----------------------------------------------------------------------------
-const getStructMemberName = utils.tryCatch((str) => {
-	let structMemberName = []
-    let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
-    if (matchAll.length)
-        structMemberName = matchAll.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
-	return structMemberName
-})
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-const getStructInFile = utils.tryCatch((structName, filePath) => {
-	let text = fs.readFileSync(filePath, 'utf8')
-	let struct_list =  getStructList(text)
+const getStructList = utils.tryCatch((str) => {
+	// 'struct' with or without 'packed' { * } 'word';
+    let matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm))
+    if (matchAll.length) return matchAll.map(x => x[0])
+	return matchAll
+})
 
-	for (let struct of struct_list) {
-		// console.log(`Scanning struct '${struct}'`)
-		if(getStructName(struct) == structName) {
-			console.log(`Found struct`)
-			let completionList = []
-			for (let structMember of getStructMemberName(struct)) {
+
+
+//----------------------------------------------------------------------------
+const getStructMemberName = utils.tryCatch((str) => {
+    let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
+    if (matchAll.length) return matchAll.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
+	return matchAll
+})
+
+module.exports = {
+	provideCompletionItems,
+}
+
+/*
+
+
+for (let structMember of getStructMemberName(struct)) {
 				console.log(`Found member ${structMember}`)
 				completionList.push(new vscode.CompletionItem(structMember))
 			}
 			return completionList
-		}
-	}
-})
 
-//----------------------------------------------------------------------------
-// @TODO need to add an object of 'scanned' to avoid recursive scan
-const getStruct = async (structName, filePath) => {
-	let filePathToFileNameWithoutExt = utils.filePathToFileNameWithoutExt(filePath)
-	console.log(`Searching struct in '${filePathToFileNameWithoutExt}'`)
-	let returnFromFile = getStructInFile(structName, filePath)
-	if (returnFromFile) {
-		return returnFromFile
-	}
-	let text = fs.readFileSync(filePath, 'utf8')
-	let importFileNameList = utils.getImportNameList(text)
-	for (let importFileName of importFileNameList) {
-
-		if(filePathToFileNameWithoutExt != importFileName) {
-			console.log(`Checking import '${importFileName}'`)
-			let path = await utils.getFilePath(importFileName)
-			let returnValue = await getStruct(structName, path)
-			if (returnValue) {
-				return returnValue
-			}
-		}
-	}
-	console.log(`Cant find '${structName}'`)
-}
-
-//----------------------------------------------------------------------------
-module.exports = {
-	provideCompletionItems,
-}
+*/

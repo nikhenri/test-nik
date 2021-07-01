@@ -72,7 +72,7 @@ const searchLocation = async (document, position) => {
 	// Import ?
 	if (regexp.isImport(lineOfWordAndTextAfter, word)) {
 		console.log(`Searching package: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text) => {return regexp.getPackageMatch(text)})
+		location = await getLocation(word, (text) => {return regexp.getPackageMatch(text)})
 		if(location) return location
 	}
 
