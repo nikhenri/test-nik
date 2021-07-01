@@ -75,28 +75,8 @@ const searchStruct = async (structTypeName, fileNameWithoutExt) => {
 
 //----------------------------------------------------------------------------
 const searchStructInText = utils.tryCatch((text, structTypeName) => {
-	let struct_list =  getStructList(text)
-
-	for (let struct of struct_list) {
-		// console.log(`Scanning struct '${struct}'`)
-		if(getStructName(struct) == structTypeName) {
-			console.log(`Found struct`)
-			return struct
-		}
-	}
-})
-
-//----------------------------------------------------------------------------
-const getStructList = utils.tryCatch((str) => {
-	// 'struct' with or without 'packed' { * } 'word';
-    let matchAll = Array.from(str.matchAll(/struct(?:\s+packed)?\s*{[\S\s]*?}\s*\w+\s*;/gm))
-    if (matchAll.length) return matchAll.map(x => x[0])
-	return matchAll
-})
-
-//----------------------------------------------------------------------------
-const getStructName = utils.tryCatch((str) => {
-	return str.match(/}\s*(\w+)\s*;/)[1]
+	let matchAll = Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
+	if (matchAll.length) return matchAll[0][0]
 })
 
 //----------------------------------------------------------------------------
