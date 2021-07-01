@@ -8,19 +8,21 @@ const provideCompletionItems = async (document, position) => {
 
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (linePrefix.endsWith('.') && isStructAccess(linePrefix)) {
+
 		let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
-        let text = (await utils.getFileText(fileNameWithoutExt)).text
+        let textToSearchTypeName = (await utils.getFileText(fileNameWithoutExt)).text
 		let groupMatch = getStructSectionWithoutIndex(linePrefix)
+
 		for (let signalName of groupMatch) {
-			let structTypeName = getTypeName(text, signalName)
-			if(utils.wordIsReserved(structTypeName)) return
+			let structTypeName = getTypeName(textToSearchTypeName, signalName)
+			if(utils.wordIsReserved(structTypeName)) return // logic toto;
 			let structDeclaration = await searchStruct(structTypeName, fileNameWithoutExt)
             if(groupMatch[groupMatch.length-1] == signalName) { // last element
 				let structMemberList = getStructMemberList(structDeclaration.struct)
                 let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
                 return completionList
             } else {
-                text = structDeclaration.struct
+                textToSearchTypeName = structDeclaration.struct
                 fileNameWithoutExt = structDeclaration.fileNameWithoutExt
             }
 		}
@@ -49,8 +51,11 @@ const getTypeName = utils.tryCatch((str, signalName) => {
 //----------------------------------------------------------------------------
 // @TODO need to add an object of 'scanned' to avoid recursive scan
 const searchStruct = async (structTypeName, fileNameWithoutExt) => {
+	// getMatchInFile
     let fileTextObj = await utils.getFileText(fileNameWithoutExt)
 	let struct = searchStructInText(fileTextObj.text, structTypeName)
+	// getMatchInFile
+
 	if (struct) {
 		return {struct, fileNameWithoutExt:fileNameWithoutExt}
 	}

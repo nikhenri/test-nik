@@ -39,7 +39,7 @@ const searchLocation = async (document, position) => {
 	if(utils.wordIsNumber(word) || utils.wordIsReserved(word)) return
 	console.log(`Word: ${word}`)
 
-	let lineOfWordAndTextAfter = document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0))) // @ TODO
+	let lineOfWordAndTextAfter = utils.replaceCommentWithSpace(document.getText().substring(document.offsetAt(new vscode.Position(position.line, 0)))) // @ TODO
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
 	let location
 
