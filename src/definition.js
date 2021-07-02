@@ -96,10 +96,10 @@ const getLocation = async (fileNameWithoutExt, funcMatch) => {
 	}
 
     for (let name of fileNameWithoutExtList) {
-        let matchInFileObj = await getMatchInFile(name, funcMatch)
+        let matchInFileObj = await utils.getMatchInFile(name, funcMatch)
 
 	    if(!matchInFileObj && fileNameWithoutExt)
-		    matchInFileObj = await getMatchInImport(name, funcMatch)
+		    matchInFileObj = await utils.getMatchInImport(name, funcMatch)
 
         if(matchInFileObj) {
             for (let match of matchInFileObj.match) {
@@ -111,33 +111,6 @@ const getLocation = async (fileNameWithoutExt, funcMatch) => {
     }
 
     if(locationList.length) return locationList
-}
-
-//----------------------------------------------------------------------------
-// get: nameFile, name, matchFunction
-// .path = file path
-// .text = fileText
-// .match = MatchAll object from regEx
-const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
-	//console.log(`Scanning ${fileNameWithoutExt}`)
-	let fileTextObj = await utils.getFileText(fileNameWithoutExt)
-	fileTextObj.match = funcMatch(fileTextObj.text)
-	if(fileTextObj.match.length)
-		return fileTextObj
-}
-
-//----------------------------------------------------------------------------
-// get: nameFile, name, matchFunction
-// return Object:
-// .path = file path
-// .text = fileText
-// .match = MatchAll object from regEx
-const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
-	let fileTextObj = await utils.getFileText(fileNameWithoutExt)
-	for (let importfileNameWithoutExt of utils.getImportNameList(fileTextObj.text)) {
-		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
-		if(matchInFileObj) return matchInFileObj
-	}
 }
 
 //----------------------------------------------------------------------------

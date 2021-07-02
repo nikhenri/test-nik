@@ -16,14 +16,14 @@ const provideCompletionItems = async (document, position) => {
 		for (let signalName of groupMatch) {
 			let structTypeName = getTypeName(textToSearchTypeName, signalName)
 			if(utils.wordIsReserved(structTypeName)) return // logic toto;
-			let structDeclaration = await searchStruct(structTypeName, fileNameWithoutExt)
+			let matchInFileObj = await searchStruct(structTypeName, fileNameWithoutExt)
             if(groupMatch[groupMatch.length-1] == signalName) { // last element
-				let structMemberList = getStructMemberList(structDeclaration.struct)
+				let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
                 let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
                 return completionList
             } else {
-                textToSearchTypeName = structDeclaration.struct
-                fileNameWithoutExt = structDeclaration.fileNameWithoutExt
+                textToSearchTypeName = matchInFileObj.match[0][0]
+                fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
             }
 		}
 	}
@@ -51,32 +51,13 @@ const getTypeName = utils.tryCatch((str, signalName) => {
 //----------------------------------------------------------------------------
 // @TODO need to add an object of 'scanned' to avoid recursive scan
 const searchStruct = async (structTypeName, fileNameWithoutExt) => {
-	// getMatchInFile
-    let fileTextObj = await utils.getFileText(fileNameWithoutExt)
-	let struct = searchStructInText(fileTextObj.text, structTypeName)
-	// getMatchInFile
-
-	if (struct) {
-		return {struct, fileNameWithoutExt:fileNameWithoutExt}
-	}
-	let importFileNameList = utils.getImportNameList(fileTextObj.text)
-	for (let importFileName of importFileNameList) {
-		if(fileNameWithoutExt != importFileName) {
-			console.log(`Checking import '${importFileName}'`)
-			fileTextObj = await utils.getFileText(importFileName)
-			struct = searchStructInText(fileTextObj.text, structTypeName)
-			if (struct) {
-				return {struct, fileNameWithoutExt:importFileName}
-			}
-		}
-	}
-	console.log(`Cant find '${structTypeName}'`)
+	let matchInFileObj = await utils.getMatchInFileOrImport(fileNameWithoutExt, text=> searchStructInText(text, structTypeName))
+	if(matchInFileObj) return matchInFileObj
 }
 
 //----------------------------------------------------------------------------
 const searchStructInText = utils.tryCatch((text, structTypeName) => {
-	let matchAll = Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
-	if (matchAll.length) return matchAll[0][0]
+	return Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
 })
 
 //----------------------------------------------------------------------------

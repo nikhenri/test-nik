@@ -65,7 +65,7 @@ const getFileText = async (fileNameWithoutExt) => {
 		let path = await getFilePath(fileNameWithoutExt)
 		//console.log(`Reading '${path}'`)
     	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
-		getFileText.textObj[fileNameWithoutExt] = { path, text }
+		getFileText.textObj[fileNameWithoutExt] = { path, text, fileNameWithoutExt}
 	}
 
 	return getFileText.textObj[fileNameWithoutExt];
@@ -87,11 +87,14 @@ const indexToPosition = tryCatch((text, index) => {
 	return new vscode.Position(line, char)
 })
 //----------------------------------------------------------------------------
-const getImportNameList = tryCatch((text) => {
+const getImportNameList = async (fileNameWithoutExt) => {
+	let text = (await getFileText(fileNameWithoutExt)).text
 	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
-	if (matchAll.length) return  matchAll.map(x => x[1])
+	if (matchAll.length) {
+		return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
+	}
 	return matchAll
-})
+}
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 const wordIsReserved = tryCatch((word) => {
@@ -126,6 +129,48 @@ const wordIsNumber = tryCatch((word) => {
     return word.match(/\b\d+/)
 })
 //----------------------------------------------------------------------------
+const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
+	//console.log(`Scanning ${fileNameWithoutExt}`)
+	let fileTextObj = await getFileText(fileNameWithoutExt)
+	fileTextObj.match = funcMatch(fileTextObj.text)
+	if(fileTextObj.match.length)
+		return fileTextObj
+}
+
+//----------------------------------------------------------------------------
+// TODO
+const getMatchInAllFile = async (fileNameWithoutExt, funcMatch) => {
+	let fileNameWithoutExtList = (await getFilePath()).map(x => filePathToFileNameWithoutExt(x))
+	let matchInFileObjList = []
+	for (let name of fileNameWithoutExtList) {
+        let matchInFileObj = await getMatchInFileOrImport(name, funcMatch)
+		if(matchInFileObjList) matchInFileObjList.push(matchInFileObj)
+	}
+	return matchInFileObjList
+}
+
+//----------------------------------------------------------------------------
+const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
+	for (let importfileNameWithoutExt of await getImportNameList(fileNameWithoutExt)) {
+		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
+		if(matchInFileObj) return matchInFileObj
+	}
+}
+
+//----------------------------------------------------------------------------
+// get: nameFile, name, matchFunction
+// .path = file path
+// .text = fileText
+// .match = MatchAll object from regEx
+// .fileNameWithoutExt = fileNameWithoutExt
+const getMatchInFileOrImport = async (fileNameWithoutExt, funcMatch) => {
+	let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
+	if(matchInFileObj) return matchInFileObj
+	matchInFileObj = await getMatchInImport(fileNameWithoutExt, funcMatch)
+	if(matchInFileObj) return matchInFileObj
+}
+
+//----------------------------------------------------------------------------
 module.exports = {
     tryCatch,
 	tryCatchAsync,
@@ -135,7 +180,9 @@ module.exports = {
 	uriToFileNameWithoutExt,
 	indexToPosition,
 	filePathToFileNameWithoutExt,
-	getImportNameList,
 	wordIsNumber,
-	wordIsReserved
+	wordIsReserved,
+	getMatchInFileOrImport,
+	getMatchInFile,
+	getMatchInImport,
 };
