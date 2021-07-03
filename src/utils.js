@@ -52,7 +52,7 @@ const getFilePath = async (fileNameWithoutExt)=> {
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		console.log("Updating findFiles...")
-        let finFiles = await vscode.workspace.findFiles("**/*.*v") //get URI of all file
+        let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
 		getFilePath.listOfPath = finFiles.map(x => x.fsPath) //keep only the path
 
 		if (fileNameWithoutExt) //if we want a specific file
