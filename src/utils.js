@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-// Contains function that i need to share accross multiple files
+// Contains function that need to be share accross multiple files
 //----------------------------------------------------------------------------
 const vscode = require('vscode')
 const path = require('path')
