@@ -8,6 +8,7 @@ const completionItems = require('./completionItems')
 
 //----------------------------------------------------------------------------
 const activate = utils.tryCatch((context) => {
+	utils.getFilePath()
     context.subscriptions.push([
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems:completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition:definition.provideDefinition}),

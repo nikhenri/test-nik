@@ -84,30 +84,19 @@ const searchLocation = async (document, position) => {
 
 //----------------------------------------------------------------------------
 const getLocation = async (fileNameWithoutExt, funcMatch) => {
-	// check current file
-    let locationList = []
+	let matchInFileObjList
+	if(fileNameWithoutExt)
+		matchInFileObjList = [await utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)]
+	else 
+		matchInFileObjList = await utils.getMatchInAllFile(funcMatch)
 
-    let fileNameWithoutExtList
-    if(fileNameWithoutExt)
-        fileNameWithoutExtList = [fileNameWithoutExt]
-    else {
-		let filePathList = await utils.getFilePath()
-        fileNameWithoutExtList = filePathList.map(x => utils.filePathToFileNameWithoutExt(x))
-	}
-
-    for (let name of fileNameWithoutExtList) {
-        let matchInFileObj = await utils.getMatchInFile(name, funcMatch)
-
-	    if(!matchInFileObj && fileNameWithoutExt)
-		    matchInFileObj = await utils.getMatchInImport(name, funcMatch)
-
-        if(matchInFileObj) {
-            for (let match of matchInFileObj.match) {
-                let position = utils.indexToPosition(matchInFileObj.text, match.index)
-		        console.log(`Found match in ${matchInFileObj.path}, line: ${position.line}, char: ${position.character}`)
-                locationList.push(new vscode.Location(vscode.Uri.file(matchInFileObj.path), position))
-            }
-        }
+	let locationList = []
+    for (let matchInFile of matchInFileObjList) {
+		for (let match of matchInFile.match) {
+			let position = utils.indexToPosition(matchInFile.text, match.index)
+			console.log(`Found match in ${matchInFile.path}, line: ${position.line}, char: ${position.character}`)
+			locationList.push(new vscode.Location(vscode.Uri.file(matchInFile.path), position))
+		}
     }
 
     if(locationList.length) return locationList

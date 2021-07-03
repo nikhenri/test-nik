@@ -139,12 +139,12 @@ const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
 
 //----------------------------------------------------------------------------
 // TODO
-const getMatchInAllFile = async (fileNameWithoutExt, funcMatch) => {
+const getMatchInAllFile = async (funcMatch) => {
 	let fileNameWithoutExtList = (await getFilePath()).map(x => filePathToFileNameWithoutExt(x))
 	let matchInFileObjList = []
-	for (let name of fileNameWithoutExtList) {
-        let matchInFileObj = await getMatchInFileOrImport(name, funcMatch)
-		if(matchInFileObjList) matchInFileObjList.push(matchInFileObj)
+	for (let fileNameWithoutExt of fileNameWithoutExtList) {
+        let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
+		if(matchInFileObj) matchInFileObjList.push(matchInFileObj)
 	}
 	return matchInFileObjList
 }
@@ -183,6 +183,5 @@ module.exports = {
 	wordIsNumber,
 	wordIsReserved,
 	getMatchInFileOrImport,
-	getMatchInFile,
-	getMatchInImport,
+	getMatchInAllFile,
 };
