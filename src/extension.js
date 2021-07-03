@@ -1,3 +1,6 @@
+//----------------------------------------------------------------------------
+// Main
+//----------------------------------------------------------------------------
 console.log('Entering extension.js...')
 
 const vscode = require('vscode')
@@ -7,18 +10,19 @@ const terminal = require('./terminal')
 const completionItems = require('./completionItems')
 
 //----------------------------------------------------------------------------
-const activate = utils.tryCatch((context) => {
-	utils.getFilePath()
+// Register all functionnality we add
+const activate = (context) => {
+	utils.getFilePath() // init all the path
     context.subscriptions.push([
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems:completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition:definition.provideDefinition}),
 		vscode.window.registerTerminalLinkProvider({provideTerminalLinks:terminal.provideTerminalLinks, handleTerminalLink:terminal.handleTerminalLink})
 	])
-})
+}
 
 //----------------------------------------------------------------------------
 // this method is called when your extension is deactivated
-const deactivate = utils.tryCatch(() => {})
+const deactivate = ()=>{}
 
 //----------------------------------------------------------------------------
 module.exports = {

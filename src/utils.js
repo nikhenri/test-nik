@@ -36,11 +36,11 @@ const tryCatch = (func) => {
 
 //----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
-const replaceCommentWithSpace = tryCatch((text) => {
+const replaceCommentWithSpace = (text) => {
 	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|/g, (match) => {
 		return " ".repeat(match.length)
 	})
-})
+}
 
 //----------------------------------------------------------------------------
 // Will search all file that have the name 'fileNameWithoutExt' with extension .sv or .v
@@ -85,21 +85,21 @@ const getFileText = async (fileNameWithoutExt) => {
 }
 
 //----------------------------------------------------------------------------
-const uriToFileNameWithoutExt = tryCatch((uri) => {
+const uriToFileNameWithoutExt = (uri) => {
 	return filePathToFileNameWithoutExt(uri.fsPath)
-})
+}
 //----------------------------------------------------------------------------
-const filePathToFileNameWithoutExt = tryCatch((filePath) => {
+const filePathToFileNameWithoutExt = (filePath) => {
 	return path.parse(filePath).name
-})
+}
 //----------------------------------------------------------------------------
 // Get a index/offset caracter, convert into line/char
-const indexToPosition = tryCatch((text, index) => {
+const indexToPosition = (text, index) => {
 	let lineSplit = text.substr(0, index).split(/\r\n|\n/)
 	let line = lineSplit.length - 1
 	let char = lineSplit[lineSplit.length - 1].length
 	return new vscode.Position(line, char)
-})
+}
 //----------------------------------------------------------------------------
 // return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
 const getImportNameList = async (fileNameWithoutExt) => {
@@ -111,7 +111,7 @@ const getImportNameList = async (fileNameWithoutExt) => {
 	return matchAll
 }
 //----------------------------------------------------------------------------
-const wordIsReserved = tryCatch((word) => {
+const wordIsReserved = (word) => {
     return word.match(new RegExp("\\b("+
         "accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign"+
         "|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1"+
@@ -136,12 +136,12 @@ const wordIsReserved = tryCatch((word) => {
         "|triand|trior|trireg|type|typedef|union|unique|unique0|unsigned|until|until_with|untyped|use"+
         "|uwire|var|vectored|virtual|void|wait|wait_order|wand|weak|weak0|weak1|while|wildcard|wire|with"+
         "|within|wor|xnor|xor)\\b"))
-})
+}
 
 //----------------------------------------------------------------------------
-const wordIsNumber = tryCatch((word) => {
+const wordIsNumber = (word) => {
     return word.match(/\b\d+/)
-})
+}
 
 
 //----------------------------------------------------------------------------
