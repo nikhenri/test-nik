@@ -1,8 +1,12 @@
+//----------------------------------------------------------------------------
+// Contains function that i need to share accross multiple files
+//----------------------------------------------------------------------------
 const vscode = require('vscode')
 const path = require('path')
 const fs = require('fs')
 
 //----------------------------------------------------------------------------
+// Catch to see the error
 const tryCatch = (func) => {
 	return (...restArgs) => {
 		try{
@@ -16,21 +20,22 @@ const tryCatch = (func) => {
 }
 
 //----------------------------------------------------------------------------
-const tryCatchAsync = (func) => {
-	return (...restArgs) => {
-		func(...restArgs).
-		then((ret)=>{
-			console.log(ret)
-			return ret
-		}).catch((error) => {
-			console.error(`>> ${error}`)
-			// console.trace()
-			throw("Fuck off")
-		})
-	}
-}
+// const tryCatchAsync = (func) => {
+// 	return (...restArgs) => {
+// 		func(...restArgs).
+// 		then((ret)=>{
+// 			console.log(ret)
+// 			return ret
+// 		}).catch((error) => {
+// 			console.error(`>> ${error}`)
+// 			// console.trace()
+// 			throw("Fuck off")
+// 		})
+// 	}
+// }
 
 //----------------------------------------------------------------------------
+// Remplace all comment by space so regex are easier to do
 const replaceCommentWithSpace = tryCatch((text) => {
 	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|/g, (match) => {
 		return " ".repeat(match.length)
@@ -38,34 +43,42 @@ const replaceCommentWithSpace = tryCatch((text) => {
 })
 
 //----------------------------------------------------------------------------
+// Will search all file that have the name 'fileNameWithoutExt' with extension .sv or .v
+// Ex: toto => return C:/something/toto.sv
+// If 'fileNameWithoutExt' is false, will return a list of all the file with extension .sv or .v
 const getFilePath = async (fileNameWithoutExt)=> {
 	let filePath
-	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt)
+	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
+	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		console.log("Updating findFiles...")
-        let finFiles = await vscode.workspace.findFiles("**/*.*v")
-		getFilePath.listOfPath = finFiles.map(x => x.fsPath)
+        let finFiles = await vscode.workspace.findFiles("**/*.*v") //get URI of all file
+		getFilePath.listOfPath = finFiles.map(x => x.fsPath) //keep only the path
 
-		if (!fileNameWithoutExt)
+		if (fileNameWithoutExt) //if we want a specific file
+			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
+		else // if we want all file
 			filePath = getFilePath.listOfPath
-		else
-		filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
     }
-		if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
+	if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
 	return filePath
 }
 
 //----------------------------------------------------------------------------
+// Get the text comment removed in a file, based on the fileNameWithoutExt
+// This function will save the text in memory
+// So the next call for same file will return the previous read value
+// Calling the fct without parameter clear the memory
 const getFileText = async (fileNameWithoutExt) => {
-	if(!fileNameWithoutExt) {
+	if(!fileNameWithoutExt) { // clear memory
 		getFileText.textObj = {}
 		return
 	}
-	if(!(fileNameWithoutExt in getFileText.textObj)) {
+
+	if(!(fileNameWithoutExt in getFileText.textObj)) { // already read
 		let path = await getFilePath(fileNameWithoutExt)
-		//console.log(`Reading '${path}'`)
     	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
-		getFileText.textObj[fileNameWithoutExt] = { path, text, fileNameWithoutExt}
+		getFileText.textObj[fileNameWithoutExt] = {path, text, fileNameWithoutExt} //save for future call
 	}
 
 	return getFileText.textObj[fileNameWithoutExt];
@@ -80,6 +93,7 @@ const filePathToFileNameWithoutExt = tryCatch((filePath) => {
 	return path.parse(filePath).name
 })
 //----------------------------------------------------------------------------
+// Get a index/offset caracter, convert into line/char
 const indexToPosition = tryCatch((text, index) => {
 	let lineSplit = text.substr(0, index).split(/\r\n|\n/)
 	let line = lineSplit.length - 1
@@ -87,6 +101,7 @@ const indexToPosition = tryCatch((text, index) => {
 	return new vscode.Position(line, char)
 })
 //----------------------------------------------------------------------------
+// return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
 const getImportNameList = async (fileNameWithoutExt) => {
 	let text = (await getFileText(fileNameWithoutExt)).text
 	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
@@ -95,7 +110,6 @@ const getImportNameList = async (fileNameWithoutExt) => {
 	}
 	return matchAll
 }
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 const wordIsReserved = tryCatch((word) => {
     return word.match(new RegExp("\\b("+
@@ -128,17 +142,14 @@ const wordIsReserved = tryCatch((word) => {
 const wordIsNumber = tryCatch((word) => {
     return word.match(/\b\d+/)
 })
-//----------------------------------------------------------------------------
-const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
-	//console.log(`Scanning ${fileNameWithoutExt}`)
-	let fileTextObj = await getFileText(fileNameWithoutExt)
-	fileTextObj.match = funcMatch(fileTextObj.text)
-	if(fileTextObj.match.length)
-		return fileTextObj
-}
+
 
 //----------------------------------------------------------------------------
-// TODO
+// use a match function to see if sucessfull in ALL file
+// matchInFileObj.path = file path
+// matchInFileObj.text = fileText
+// matchInFileObj.match = MatchAll object from regEx
+// matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
 const getMatchInAllFile = async (funcMatch) => {
 	let fileNameWithoutExtList = (await getFilePath()).map(x => filePathToFileNameWithoutExt(x))
 	let matchInFileObjList = []
@@ -150,19 +161,11 @@ const getMatchInAllFile = async (funcMatch) => {
 }
 
 //----------------------------------------------------------------------------
-const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
-	for (let importfileNameWithoutExt of await getImportNameList(fileNameWithoutExt)) {
-		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
-		if(matchInFileObj) return matchInFileObj
-	}
-}
-
-//----------------------------------------------------------------------------
-// get: nameFile, name, matchFunction
-// .path = file path
-// .text = fileText
-// .match = MatchAll object from regEx
-// .fileNameWithoutExt = fileNameWithoutExt
+// use a match function to see if sucessfull in file or in import of this file
+// matchInFileObj.path = file path
+// matchInFileObj.text = fileText
+// matchInFileObj.match = MatchAll object from regEx
+// matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
 const getMatchInFileOrImport = async (fileNameWithoutExt, funcMatch) => {
 	let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
 	if(matchInFileObj) return matchInFileObj
@@ -171,15 +174,31 @@ const getMatchInFileOrImport = async (fileNameWithoutExt, funcMatch) => {
 }
 
 //----------------------------------------------------------------------------
+// use a match function to see if sucessfull in the file
+// if MATCH => return fileTextObj that containt .path .text .fileNameWithoutExt .match
+const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
+	let fileTextObj = await getFileText(fileNameWithoutExt)
+	fileTextObj.match = funcMatch(fileTextObj.text)
+	if(fileTextObj.match.length) return fileTextObj
+}
+
+//----------------------------------------------------------------------------
+// check in the import of the file if there a match using a match function
+const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
+	for (let importfileNameWithoutExt of await getImportNameList(fileNameWithoutExt)) {
+		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
+		if(matchInFileObj) return matchInFileObj
+	}
+}
+
+//----------------------------------------------------------------------------
 module.exports = {
     tryCatch,
-	tryCatchAsync,
     replaceCommentWithSpace,
     getFilePath,
     getFileText,
 	uriToFileNameWithoutExt,
 	indexToPosition,
-	filePathToFileNameWithoutExt,
 	wordIsNumber,
 	wordIsReserved,
 	getMatchInFileOrImport,
