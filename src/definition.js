@@ -21,12 +21,14 @@ const flashLine = utils.tryCatch((locationList) => {
 	let onDidChangeTextEditorSelectioEvent = vscode.window.onDidChangeTextEditorSelection((event) => {
 		if(locationList.length == 1) {
 			if(locationList[0].uri.fsPath != event.textEditor.document.uri.fsPath || locationList[0].range.start.line == event.selections[0].start.line) {
-				let line = locationList[0].range.start.line
-				let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
-				let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
-				event.textEditor.setDecorations(decoration, [rangeOption])
-				// event.textEditor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop)
-				setTimeout(()=>{decoration.dispose()}, 1500)
+				setTimeout(() => {
+					let line = locationList[0].range.start.line
+					let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
+					let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
+					event.textEditor.setDecorations(decoration, [rangeOption])
+					// event.textEditor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop)
+					setTimeout(()=>{decoration.dispose()}, 1500)
+				}, 250)
 			}
 		}
 		onDidChangeTextEditorSelectioEvent.dispose()
