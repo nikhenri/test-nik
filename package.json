@@ -3,7 +3,7 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "1.0",
+	"version": "1.0.0",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
