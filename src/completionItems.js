@@ -1,3 +1,6 @@
+//----------------------------------------------------------------------------
+// Function to do the completion after the '.'
+//----------------------------------------------------------------------------
 const vscode = require('vscode')
 const utils = require('./utils')
 
@@ -7,65 +10,59 @@ const provideCompletionItems = async (document, position) => {
 	utils.getFileText() // init
 
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
-	if (linePrefix.endsWith('.') && isStructAccess(linePrefix)) {
+	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
 
-		let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
-        let textToSearchTypeName = (await utils.getFileText(fileNameWithoutExt)).text
-		let groupMatch = getStructSectionWithoutIndex(linePrefix)
+	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
+	let textToSearchTypeName = (await utils.getFileText(fileNameWithoutExt)).text
+	let groupMatch = getStructSectionWithoutIndex(linePrefix) //split the string in section
 
-		for (let signalName of groupMatch) {
-			let structTypeName = getTypeName(textToSearchTypeName, signalName)
-			if(utils.wordIsReserved(structTypeName)) return // logic toto;
-			let matchInFileObj = await searchStruct(structTypeName, fileNameWithoutExt)
-            if(groupMatch[groupMatch.length-1] == signalName) { // last element
-				let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
-                let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
-                return completionList
-            } else {
-                textToSearchTypeName = matchInFileObj.match[0][0]
-                fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
-            }
+	for (let signalName of groupMatch) {
+		let structTypeName = getTypeName(textToSearchTypeName, signalName)
+		if(utils.wordIsReserved(structTypeName)) return // ex: logic toto;
+		let matchInFileObj = await utils.getMatchInFileOrImport(fileNameWithoutExt, (text)=> searchStructInText(text, structTypeName))
+		if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
+			let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
+			let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
+			return completionList
+		} else { // if we are not the last section, init search text and filename
+			textToSearchTypeName = matchInFileObj.match[0][0]
+			fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
 		}
 	}
 	console.log("Not able to Complete");
 }
 
 //----------------------------------------------------------------------------
-const isStructAccess = utils.tryCatch((text) => {
+const isStructAccess = (text) => {
 	return text.match(/[\w\.\[\]]+\.$/g)
-})
+}
 //----------------------------------------------------------------------------
-const getStructSectionWithoutIndex = utils.tryCatch((text) => {
-	let matchAll = Array.from(text.matchAll(/(\w+)(?:\[.*?\])?\./g))
+// split the string in section, toto[7:0].tata => [toto, tata]
+const getStructSectionWithoutIndex = (text) => {
+	let match = text.match(/[\w\.\[\]]+$/g) //match end of line something[666].
+	let matchAll = Array.from(match[0].matchAll(/(\w+)(?:\[.*?\])?\./g)) //extract word
 	let groupMatch = matchAll.map(x => x[1])
 	return groupMatch
-})
-
-//----------------------------------------------------------------------------
-const getTypeName = utils.tryCatch((str, signalName) => {
-	// first word that is not input | output | inout
-    let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")))
-	if (matchAll.length) return matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
-})
-
-//----------------------------------------------------------------------------
-// @TODO need to add an object of 'scanned' to avoid recursive scan
-const searchStruct = async (structTypeName, fileNameWithoutExt) => {
-	let matchInFileObj = await utils.getMatchInFileOrImport(fileNameWithoutExt, text=> searchStructInText(text, structTypeName))
-	if(matchInFileObj) return matchInFileObj
 }
 
 //----------------------------------------------------------------------------
-const searchStructInText = utils.tryCatch((text, structTypeName) => {
-	return Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
-})
+const getTypeName = (str, signalName) => {
+	// first word that is not input | output | inout
+    let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")))
+	if (matchAll.length) return matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
+}
 
 //----------------------------------------------------------------------------
-const getStructMemberList = utils.tryCatch((str) => {
+const searchStructInText = (text, structTypeName) => {
+	return Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
+}
+
+//----------------------------------------------------------------------------
+const getStructMemberList = (str) => {
     let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
-    if (matchAll.length) return matchAll.map(x => x[1]).slice(0, -1) // get the (match) [1], throw last match (-1)
+    if (matchAll.length) return matchAll.map(x => x[1]).slice(0, -1) // throw last match (-1), it is the name
 	return matchAll
-})
+}
 
 //----------------------------------------------------------------------------
 module.exports = {
