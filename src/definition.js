@@ -1,10 +1,14 @@
+//----------------------------------------------------------------------------
+// Function to do the CTRL + Click
+//----------------------------------------------------------------------------
 const vscode = require('vscode')
 const utils = require('./utils')
 
 //----------------------------------------------------------------------------
+// Return a vscode location
 const provideDefinition = async (document, position, token) => {
 	console.log("CTRL")
-	utils.getFileText() // init
+	utils.getFileText() // init 
 
 	let locationList = await searchLocation(document, position)
 	if(locationList && locationList.length) {
@@ -16,26 +20,27 @@ const provideDefinition = async (document, position, token) => {
 }
 
 //----------------------------------------------------------------------------
-const flashLine = utils.tryCatch((locationList) => {
-
+const flashLine = (locationList) => {
 	let onDidChangeTextEditorSelectioEvent = vscode.window.onDidChangeTextEditorSelection((event) => {
-		if(locationList.length == 1) {
-			if(locationList[0].uri.fsPath != event.textEditor.document.uri.fsPath || locationList[0].range.start.line == event.selections[0].start.line) {
+		if(locationList.length == 1) { 
+			// if we have move to the programmed location
+			if(locationList[0].uri.fsPath == event.textEditor.document.uri.fsPath && locationList[0].range.start.line == event.selections[0].start.line) {
 				setTimeout(() => {
 					let line = locationList[0].range.start.line
 					let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
 					let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
 					event.textEditor.setDecorations(decoration, [rangeOption])
 					// event.textEditor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop)
-					setTimeout(()=>{decoration.dispose()}, 1500)
+					setTimeout(()=>{decoration.dispose()}, 1500) //remove decoration
 				}, 250)
 			}
 		}
 		onDidChangeTextEditorSelectioEvent.dispose()
 	})
-})
+}
 
 //----------------------------------------------------------------------------
+// Based on the word and text following the word, return a goto vscode position
 const searchLocation = async (document, position) => {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(utils.wordIsNumber(word) || utils.wordIsReserved(word)) return
