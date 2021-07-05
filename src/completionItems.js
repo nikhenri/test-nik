@@ -47,9 +47,13 @@ const getStructSectionWithoutIndex = (text) => {
 
 //----------------------------------------------------------------------------
 const getTypeName = (str, signalName) => {
-	// first word that is not input | output | inout
-    let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+).*?${signalName}`, "gm")))
-	if (matchAll.length) return matchAll[0][1] //[0] get first occurance of the signal, [1] get the (match)
+	// type(os_txOut_events_p) s_events_ptrWr_s;
+	// input ts_bufferHandler_cbdma_ptrWr_in is_txIn_ptrWr_p,
+	// ts_bufferHandler_cbdma_ptrWr_in [2:0] vg_byte_size_s
+    let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+)(\\(\\w+\\))?.*?${signalName}`, "gm")))
+	let typeName = matchAll[0][1]
+	if(typeName != "type") return typeName
+	return getTypeName(str, matchAll[0][2].slice(1,-1))
 }
 
 //----------------------------------------------------------------------------
