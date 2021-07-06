@@ -81,6 +81,14 @@ const searchLocation = async (document, position) => {
 		location = await getLocation(word, (text) => {return getPackageMatch(text)})
 		if(location) return location
 	}
+	// port ?
+	if (isPort(lineOfWordAndTextAfter, word)) { // .toto (),
+		console.log(`Searching port: ${word}`)
+		let textBeforeLine = utils.replaceCommentWithSpace(document.getText().substring(0, offsetStartOfLine-1))
+		let LastmoduleName = getInstanceMatch(textBeforeLine).slice(-1)[0] //get last instance name
+		location = await getLocation(LastmoduleName, (text)=>{return getPortMatch(text, word)})
+		if(location) return location
+	}
 
 	// If we found nothing, try to get the first occurance
 	console.log(`Searching 1er line of ${word}`)
@@ -158,6 +166,25 @@ const isImport = (text, name) => {
 //----------------------------------------------------------------------------
 const getPackageMatch = (text) => {
     return Array.from(text.matchAll(/^[ ]*package\s+\w+\s*;/gm))
+}
+
+//----------------------------------------------------------------------------
+const isPort = (text, name) => {
+	return text.match(new RegExp(`^[ ]*\\.${name}\\b`))
+}
+
+//----------------------------------------------------------------------------
+const getInstanceMatch = (text) => {
+	let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm));
+	if (matchAll.length) {
+		let groupMatch = matchAll.map(x => x[1])
+		return groupMatch
+	}
+	return [];
+}
+//----------------------------------------------------------------------------
+const getPortMatch = (text, name) => {
+	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*\\,`, "gm")))
 }
 
 //----------------------------------------------------------------------------
