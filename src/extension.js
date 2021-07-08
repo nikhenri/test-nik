@@ -20,8 +20,14 @@ async function activate(context) {
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
 		vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
-		vscode.workspace.onDidChangeTextDocument(() => onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)),
-		vscode.window.onDidChangeActiveTextEditor(editor => {if(editor) diagnostic.updateDiagnostic(editor)}),
+		vscode.workspace.onDidChangeTextDocument(event =>	{
+			if(vscode.languages.match('systemverilog', event.document))
+				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)
+		}),
+		vscode.window.onDidChangeActiveTextEditor(editor => {
+			if(editor && vscode.languages.match('systemverilog', editor.document))
+				diagnostic.updateDiagnostic(editor)
+		}),
 	])
 }
 
@@ -44,12 +50,6 @@ module.exports = {
 
 //----------------------------------------------------------------------------
 /*
-let out = vscode.window.createOutputChannel("Nik")
-out.show()
-out.appendLine('hello Nik')
-*/
-/*
-//		let fileName = document.fileName
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello World from test Nik!')
 
@@ -61,12 +61,4 @@ out.appendLine('hello Nik')
 		let textt =
 		console.timeLog('process')
 		console.timeEnd('process')
-		*/
-
-		/*
-			let a = vscode.window
-	let aa = vscode.window.activeTextEditor
-	let bb = vscode.window.activeTextEditor.document
-	let aaa = vscode.window.visibleTextEditors
-	*/
-
+*/

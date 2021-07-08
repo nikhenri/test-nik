@@ -50,6 +50,7 @@ async function getFileText(fileNameWithoutExt) {
 	if(!(fileNameWithoutExt in getFileText.textObj)) { // not already read
 		let path = await getFilePath(fileNameWithoutExt)
 		let text
+		if(!path) return
 		if(uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri) == fileNameWithoutExt) //file currently open
 			text = replaceCommentWithSpace(vscode.window.activeTextEditor.document.getText())
 		else
