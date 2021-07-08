@@ -8,35 +8,13 @@ const utils = require('./utils')
 // Return a vscode location
 async function provideDefinition (document, position) {
 	console.log("CTRL")
+
 	utils.getFileText() // init
 
 	let locationList = await searchLocation(document, position)
-	if(locationList && locationList.length) {
-        flashLine(locationList)
-		return locationList
-	}
+	if(locationList) return locationList
 
 	console.log("Not able to Provide");
-}
-
-//----------------------------------------------------------------------------
-function flashLine (locationList) {
-	let onDidChangeTextEditorSelectioEvent = vscode.window.onDidChangeTextEditorSelection((event) => {
-		if(locationList.length == 1) {
-			// if we have move to the programmed location
-			if(locationList[0].uri.fsPath == event.textEditor.document.uri.fsPath && locationList[0].range.start.line == event.selections[0].start.line) {
-				setTimeout(() => {
-					let line = locationList[0].range.start.line
-					let decoration = vscode.window.createTextEditorDecorationType({color: "#2196f3", backgroundColor: "#ffeb3b"})
-					let rangeOption = {range: new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999))}
-					event.textEditor.setDecorations(decoration, [rangeOption])
-					// event.textEditor.revealRange(new vscode.Range(line, 0, line, 0), vscode.TextEditorRevealType.AtTop)
-					setTimeout(()=>{decoration.dispose()}, 1500) //remove decoration
-				}, 250)
-			}
-		}
-		onDidChangeTextEditorSelectioEvent.dispose()
-	})
 }
 
 //----------------------------------------------------------------------------
@@ -93,7 +71,7 @@ async function searchLocation(document, position) {
 	// If we found nothing, try to get the first occurance
 	console.log(`Searching 1er line of ${word}`)
 	location = await getLocation(fileNameWithoutExt, (text) => {return getWordFirstOccuranceMatch(text, word)})
-	if(location[0].range.start.line != position.line) return location // dont move if already 1er line
+	if(location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
 }
 
 //----------------------------------------------------------------------------
@@ -110,9 +88,16 @@ async function getLocation(fileNameWithoutExt, funcMatch) {
 	let locationList = []
     for (let matchInFile of matchInFileObjList) { //for files that have a match
 		for (let match of matchInFile.match) { //for all match in that file
-			let position = utils.indexToPosition(matchInFile.text, match.index)
-			console.log(`Found match in ${matchInFile.path}, line: ${position.line}, char: ${position.character}`)
-			locationList.push(new vscode.Location(vscode.Uri.file(matchInFile.path), position))
+			let position_start = utils.indexToPosition(matchInFile.text, match.index)
+			let position_end = utils.indexToPosition(matchInFile.text, match.index + match[0].length)
+			console.log(`Found match in ${matchInFile.path}=> line: ${position_start.line}(${position_start.character}) to line: ${position_end.line}(${position_end.character})`)
+			// locationList.push(new vscode.Location(vscode.Uri.file(matchInFile.path), position))
+
+			locationList.push({targetRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_end.line, 999)),
+							   targetSelectionRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_start.line, 999)),
+							   targetUri: vscode.Uri.file(matchInFile.path)
+			})
+			console.log();
 		}
     }
 
