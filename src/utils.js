@@ -6,37 +6,8 @@ const path = require('path')
 const fs = require('fs')
 
 //----------------------------------------------------------------------------
-// Catch to see the error
-const tryCatch = (func) => {
-	return (...restArgs) => {
-		try{
-			return func(...restArgs)
-		} catch (error) {
-			console.error(`>> ${error}`)
-			// console.trace()
-			throw("Fuck off")
-		}
-	}
-}
-
-//----------------------------------------------------------------------------
-// const tryCatchAsync = (func) => {
-// 	return (...restArgs) => {
-// 		func(...restArgs).
-// 		then((ret)=>{
-// 			console.log(ret)
-// 			return ret
-// 		}).catch((error) => {
-// 			console.error(`>> ${error}`)
-// 			// console.trace()
-// 			throw("Fuck off")
-// 		})
-// 	}
-// }
-
-//----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
-const replaceCommentWithSpace = (text) => {
+function replaceCommentWithSpace(text) {
 	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|/g, (match) => {
 		return " ".repeat(match.length)
 	})
@@ -46,7 +17,7 @@ const replaceCommentWithSpace = (text) => {
 // Will search all file that have the name 'fileNameWithoutExt' with extension .sv or .v
 // Ex: toto => return C:/something/toto.sv
 // If 'fileNameWithoutExt' is false, will return a list of all the file with extension .sv or .v
-const getFilePath = async (fileNameWithoutExt)=> {
+async function getFilePath(fileNameWithoutExt) {
 	let filePath
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
 	// If the list is not initialized OR we want all file OR the file is not found in list
@@ -69,8 +40,8 @@ const getFilePath = async (fileNameWithoutExt)=> {
 // This function will save the text in memory
 // So the next call for same file will return the previous read value
 // Calling the fct without parameter clear the memory
-const getFileText = async (fileNameWithoutExt) => {
-	if(!fileNameWithoutExt ) { // clear memory
+async function getFileText(fileNameWithoutExt) {
+	if(!fileNameWithoutExt) { // clear memory
 		getFileText.textObj = {}
 		return
 	} else if (!getFileText.textObj)
@@ -78,7 +49,12 @@ const getFileText = async (fileNameWithoutExt) => {
 
 	if(!(fileNameWithoutExt in getFileText.textObj)) { // not already read
 		let path = await getFilePath(fileNameWithoutExt)
-    	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
+		let text
+		if(uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri) == fileNameWithoutExt) //file currently open
+			text = replaceCommentWithSpace(vscode.window.activeTextEditor.document.getText())
+		else
+			text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
+
 		getFileText.textObj[fileNameWithoutExt] = {path, text, fileNameWithoutExt} //save for future call
 	}
 
@@ -86,16 +62,16 @@ const getFileText = async (fileNameWithoutExt) => {
 }
 
 //----------------------------------------------------------------------------
-const uriToFileNameWithoutExt = (uri) => {
+function uriToFileNameWithoutExt(uri) {
 	return filePathToFileNameWithoutExt(uri.fsPath)
 }
 //----------------------------------------------------------------------------
-const filePathToFileNameWithoutExt = (filePath) => {
+function filePathToFileNameWithoutExt(filePath) {
 	return path.parse(filePath).name
 }
 //----------------------------------------------------------------------------
 // Get a index/offset caracter, convert into line/char
-const indexToPosition = (text, index) => {
+function indexToPosition (text, index) {
 	let lineSplit = text.substr(0, index).split(/\r\n|\n/)
 	let line = lineSplit.length - 1
 	let char = lineSplit[lineSplit.length - 1].length
@@ -103,7 +79,7 @@ const indexToPosition = (text, index) => {
 }
 //----------------------------------------------------------------------------
 // return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
-const getImportNameList = async (fileNameWithoutExt) => {
+async function getImportNameList(fileNameWithoutExt) {
 	let text = (await getFileText(fileNameWithoutExt)).text
 	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
 	if (matchAll.length) {
@@ -112,7 +88,7 @@ const getImportNameList = async (fileNameWithoutExt) => {
 	return matchAll
 }
 //----------------------------------------------------------------------------
-const getImportNameListRecursive = async (fileNameWithoutExt, importList = []) => {
+async function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 	// console.log(`Inspecting ${fileNameWithoutExt}`)
 	let importListOfFile = await getImportNameList(fileNameWithoutExt)
 	for (let importName of importListOfFile) {
@@ -128,7 +104,7 @@ const getImportNameListRecursive = async (fileNameWithoutExt, importList = []) =
 	return importList
 }
 //----------------------------------------------------------------------------
-const wordIsReserved = (word) => {
+function wordIsReserved(word) {
     return word.match(new RegExp("\\b("+
         "accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign"+
         "|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1"+
@@ -156,7 +132,7 @@ const wordIsReserved = (word) => {
 }
 
 //----------------------------------------------------------------------------
-const wordIsNumber = (word) => {
+function wordIsNumber(word) {
     return word.match(/\b\d+/)
 }
 
@@ -167,7 +143,7 @@ const wordIsNumber = (word) => {
 // matchInFileObj.text = fileText
 // matchInFileObj.match = MatchAll object from regEx
 // matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
-const getMatchInAllFile = async (funcMatch) => {
+async function getMatchInAllFile(funcMatch) {
 	let fileNameWithoutExtList = (await getFilePath()).map(x => filePathToFileNameWithoutExt(x))
 	let matchInFileObjList = []
 	for (let fileNameWithoutExt of fileNameWithoutExtList) {
@@ -183,7 +159,7 @@ const getMatchInAllFile = async (funcMatch) => {
 // matchInFileObj.text = fileText
 // matchInFileObj.match = MatchAll object from regEx
 // matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
-const getMatchInFileOrImport = async (fileNameWithoutExt, funcMatch) => {
+async function getMatchInFileOrImport(fileNameWithoutExt, funcMatch) {
 	let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
 	if(matchInFileObj) return matchInFileObj
 	matchInFileObj = await getMatchInImport(fileNameWithoutExt, funcMatch)
@@ -193,7 +169,7 @@ const getMatchInFileOrImport = async (fileNameWithoutExt, funcMatch) => {
 //----------------------------------------------------------------------------
 // use a match function to see if sucessfull in the file
 // if MATCH => return fileTextObj that containt .path .text .fileNameWithoutExt .match
-const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
+async function getMatchInFile(fileNameWithoutExt, funcMatch) {
 	let fileTextObj = await getFileText(fileNameWithoutExt)
 	fileTextObj.match = funcMatch(fileTextObj.text)
 	if(fileTextObj.match.length) return fileTextObj
@@ -201,7 +177,7 @@ const getMatchInFile = async (fileNameWithoutExt, funcMatch) => {
 
 //----------------------------------------------------------------------------
 // check in the import of the file if there a match using a match function
-const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
+async function getMatchInImport(fileNameWithoutExt, funcMatch) {
 	for (let importfileNameWithoutExt of await getImportNameList(fileNameWithoutExt)) {
 		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
 		if(matchInFileObj) return matchInFileObj
@@ -210,7 +186,6 @@ const getMatchInImport = async (fileNameWithoutExt, funcMatch) => {
 
 //----------------------------------------------------------------------------
 module.exports = {
-    tryCatch,
     replaceCommentWithSpace,
     getFilePath,
     getFileText,
@@ -222,3 +197,32 @@ module.exports = {
 	getMatchInAllFile,
 	getImportNameListRecursive,
 };
+
+//----------------------------------------------------------------------------
+// Catch to see the error
+// function tryCatch = (func) => {
+// 	return (...restArgs) => {
+// 		try{
+// 			return func(...restArgs)
+// 		} catch (error) {
+// 			console.error(`>> ${error}`)
+// 			// console.trace()
+// 			throw("Fuck off")
+// 		}
+// 	}
+// }
+
+//----------------------------------------------------------------------------
+// function tryCatchAsync = (func) => {
+// 	return (...restArgs) => {
+// 		func(...restArgs).
+// 		then((ret)=>{
+// 			console.log(ret)
+// 			return ret
+// 		}).catch((error) => {
+// 			console.error(`>> ${error}`)
+// 			// console.trace()
+// 			throw("Fuck off")
+// 		})
+// 	}
+// }

@@ -6,7 +6,7 @@ const utils = require('./utils')
 
 //----------------------------------------------------------------------------
 // Return a vscode location
-const provideDefinition = async (document, position, token) => {
+async function provideDefinition (document, position) {
 	console.log("CTRL")
 	utils.getFileText() // init
 
@@ -20,7 +20,7 @@ const provideDefinition = async (document, position, token) => {
 }
 
 //----------------------------------------------------------------------------
-const flashLine = (locationList) => {
+function flashLine (locationList) {
 	let onDidChangeTextEditorSelectioEvent = vscode.window.onDidChangeTextEditorSelection((event) => {
 		if(locationList.length == 1) {
 			// if we have move to the programmed location
@@ -41,7 +41,7 @@ const flashLine = (locationList) => {
 
 //----------------------------------------------------------------------------
 // Based on the word and text following the word, return a goto vscode position
-const searchLocation = async (document, position) => {
+async function searchLocation(document, position) {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(utils.wordIsNumber(word) || utils.wordIsReserved(word)) return
 	console.log(`Word: ${word}`)
@@ -100,7 +100,7 @@ const searchLocation = async (document, position) => {
 // Will try the match function on the file 'fileNameWithoutExt'
 // If no match, try the import of the file
 // If fileNameWithoutExt is FALSE try match on all files instead
-const getLocation = async (fileNameWithoutExt, funcMatch) => {
+async function getLocation(fileNameWithoutExt, funcMatch) {
 	let matchInFileObjList
 	if(fileNameWithoutExt) // single files
 		matchInFileObjList = [await utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)]
@@ -120,61 +120,61 @@ const getLocation = async (fileNameWithoutExt, funcMatch) => {
 }
 
 //----------------------------------------------------------------------------
-const isModuleInstance = (text, name) => {
+function isModuleInstance(text, name) {
     return text.match(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "g"))
 }
 
 //----------------------------------------------------------------------------
-const getModuleDeclarationMatch = (text) => {
+function getModuleDeclarationMatch(text) {
     return Array.from(text.matchAll(/^[ ]*module\s+\w+\s*/gm))
 }
 //----------------------------------------------------------------------------
-const isFunction = (text, name) => {
+function isFunction(text, name) {
 	return text.match(new RegExp(`(?<!\\s\\.)\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
 }
 
 //----------------------------------------------------------------------------
-const getFunctionDeclarationMatch = (text, name) => {
+function getFunctionDeclarationMatch(text, name) {
     return Array.from(text.matchAll(new RegExp(`^[ ]*function\\s+.*?${name}\\s*\\(`, "gm")))
 }
 
 //----------------------------------------------------------------------------
-const isTypedef = (text, name) => {
+function isTypedef(text, name) {
 	return text.match(new RegExp(`^[ ]*(?:input\\s+|output\\s+|inout\\s+)?\\b${name}\\b(?:\\s*\\[.*?\\])*\\s+\\w+`))
 }
 
 //----------------------------------------------------------------------------
-const getTypedefDeclarationMatch = (text, name) => {
+function getTypedefDeclarationMatch(text, name) {
     return Array.from(text.matchAll(new RegExp(`^[ ]*typedef\\s+[^}]*?}\\s*${name}\\s*;`, "gm")))
 }
 
 //----------------------------------------------------------------------------
-const isModuleDeclaration = (text, name) => {
+function isModuleDeclaration(text, name) {
 	return text.match(new RegExp(`^[ ]*module\\s+\\b${name}\\b`))
 }
 
 //----------------------------------------------------------------------------
-const getModuleInstanceMatch = (text, name) => {
+function getModuleInstanceMatch(text, name) {
 	return Array.from(text.matchAll(new RegExp(`^[ ]*\\b${name}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
 }
 
 //----------------------------------------------------------------------------
-const isImport = (text, name) => {
+function isImport(text, name) {
 	return text.match(new RegExp(`^[ ]*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 }
 
 //----------------------------------------------------------------------------
-const getPackageMatch = (text) => {
+function getPackageMatch(text) {
     return Array.from(text.matchAll(/^[ ]*package\s+\w+\s*;/gm))
 }
 
 //----------------------------------------------------------------------------
-const isPort = (text, name) => {
+function isPort(text, name) {
 	return text.match(new RegExp(`^[ ]*\\.${name}\\b`))
 }
 
 //----------------------------------------------------------------------------
-const getInstanceMatch = (text) => {
+function getInstanceMatch(text) {
 	let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm));
 	if (matchAll.length) {
 		let groupMatch = matchAll.map(x => x[1])
@@ -183,17 +183,17 @@ const getInstanceMatch = (text) => {
 	return [];
 }
 //----------------------------------------------------------------------------
-const getPortMatch = (text, name) => {
+function getPortMatch(text, name) {
 	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*\\,`, "gm")))
 }
 
 //----------------------------------------------------------------------------
-const getWordOccuranceMatch = (text, name) => {
+function getWordOccuranceMatch(text, name) {
 	return Array.from(text.matchAll(new RegExp(`.*\\b${name}\\b`, "g")))
 }
 
 //----------------------------------------------------------------------------
-const getWordFirstOccuranceMatch = (text, name) => {
+function getWordFirstOccuranceMatch(text, name) {
     let match = getWordOccuranceMatch(text, name)
     if (match.length) return [match[0]] //only the first one
     return match

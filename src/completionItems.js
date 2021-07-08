@@ -5,7 +5,7 @@ const vscode = require('vscode')
 const utils = require('./utils')
 
 //----------------------------------------------------------------------------
-const provideCompletionItems = async (document, position) => {
+async function provideCompletionItems(document, position){
 	console.log(".")
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
@@ -32,12 +32,12 @@ const provideCompletionItems = async (document, position) => {
 }
 
 //----------------------------------------------------------------------------
-const isStructAccess = (text) => {
+function isStructAccess(text){
 	return text.match(/[\w\.\[\]]+\.$/g)
 }
 //----------------------------------------------------------------------------
 // split the string in section, toto[7:0].tata => [toto, tata]
-const getStructSectionWithoutIndex = (text) => {
+function getStructSectionWithoutIndex(text){
 	let match = text.match(/[\w\.\[\]]+$/g) //match end of line something[666].
 	let matchAll = Array.from(match[0].matchAll(/(\w+)(?:\[.*?\])?\./g)) //extract word
 	let groupMatch = matchAll.map(x => x[1])
@@ -45,7 +45,7 @@ const getStructSectionWithoutIndex = (text) => {
 }
 
 //----------------------------------------------------------------------------
-const getTypeName = (str, signalName) => {
+function getTypeName(str, signalName){
 	// type(os_txOut_events_p) s_events_ptrWr_s;
 	// input ts_bufferHandler_cbdma_ptrWr_in is_txIn_ptrWr_p,
 	// ts_bufferHandler_cbdma_ptrWr_in [2:0] vg_byte_size_s
@@ -56,12 +56,12 @@ const getTypeName = (str, signalName) => {
 }
 
 //----------------------------------------------------------------------------
-const searchStructInText = (text, structTypeName) => {
+function searchStructInText(text, structTypeName){
 	return Array.from(text.matchAll(new RegExp(`struct(?:\\s+packed)?\\s*{[^}]*}\\s*${structTypeName}\\s*;`, "g")))
 }
 
 //----------------------------------------------------------------------------
-const getStructMemberList = (str) => {
+function getStructMemberList(str){
     let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
     if (matchAll.length) return matchAll.map(x => x[1]).slice(0, -1) // throw last match (-1), it is the name
 	return matchAll
