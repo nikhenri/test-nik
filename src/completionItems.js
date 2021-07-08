@@ -7,10 +7,9 @@ const utils = require('./utils')
 //----------------------------------------------------------------------------
 const provideCompletionItems = async (document, position) => {
 	console.log(".")
-	utils.getFileText() // init
-
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
+	utils.getFileText() // init
 
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
 	let textToSearchTypeName = (await utils.getFileText(fileNameWithoutExt)).text

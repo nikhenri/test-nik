@@ -51,9 +51,9 @@ const getFilePath = async (fileNameWithoutExt)=> {
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
-		console.log("Updating findFiles...")
+		console.log(`Updating findFiles for ${fileNameWithoutExt}...`)
         let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
-		getFilePath.listOfPath = finFiles.map(x => x.fsPath) //keep only the path
+		getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
 
 		if (fileNameWithoutExt) //if we want a specific file
 			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
@@ -70,12 +70,13 @@ const getFilePath = async (fileNameWithoutExt)=> {
 // So the next call for same file will return the previous read value
 // Calling the fct without parameter clear the memory
 const getFileText = async (fileNameWithoutExt) => {
-	if(!fileNameWithoutExt) { // clear memory
+	if(!fileNameWithoutExt ) { // clear memory
 		getFileText.textObj = {}
 		return
-	}
+	} else if (!getFileText.textObj)
+		throw("getFileText need to be init")
 
-	if(!(fileNameWithoutExt in getFileText.textObj)) { // already read
+	if(!(fileNameWithoutExt in getFileText.textObj)) { // not already read
 		let path = await getFilePath(fileNameWithoutExt)
     	let text = replaceCommentWithSpace(fs.readFileSync(path, 'utf8'))
 		getFileText.textObj[fileNameWithoutExt] = {path, text, fileNameWithoutExt} //save for future call
@@ -109,6 +110,22 @@ const getImportNameList = async (fileNameWithoutExt) => {
 		return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
 	}
 	return matchAll
+}
+//----------------------------------------------------------------------------
+const getImportNameListRecursive = async (fileNameWithoutExt, importList = []) => {
+	// console.log(`Inspecting ${fileNameWithoutExt}`)
+	let importListOfFile = await getImportNameList(fileNameWithoutExt)
+	for (let importName of importListOfFile) {
+		let index = importList.findIndex(x => x == importName)
+		importList.push(importName) // add to the end
+		if(index == -1) { // if we have not scanned this yet
+			importList = await getImportNameListRecursive(importName, importList)
+		} else {
+			// console.log(`Skip ${importName}`)
+			importList.splice(index, index) //remove duplicate
+		}
+	}
+	return importList
 }
 //----------------------------------------------------------------------------
 const wordIsReserved = (word) => {
@@ -203,4 +220,5 @@ module.exports = {
 	wordIsReserved,
 	getMatchInFileOrImport,
 	getMatchInAllFile,
+	getImportNameListRecursive,
 };
