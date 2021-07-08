@@ -12,7 +12,7 @@ const diagnostic = require('./diagnostic')
 
 //----------------------------------------------------------------------------
 // Register all functionnality we add
-async function activate(context) {
+function activate(context) {
 	utils.getFilePath() // init all the path
 
 	if (vscode.window.activeTextEditor) diagnostic.updateDiagnostic()
@@ -32,7 +32,7 @@ async function activate(context) {
 }
 
 //----------------------------------------------------------------------------
-const onDidChangeTextDocumentDebounce = (fct, debounceMs) => {
+function onDidChangeTextDocumentDebounce(fct, debounceMs) {
 	clearTimeout(onDidChangeTextDocumentDebounce.timeOut)
 	onDidChangeTextDocumentDebounce.timeOut = setTimeout(() => fct(), debounceMs)
 }

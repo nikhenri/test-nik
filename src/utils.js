@@ -8,9 +8,11 @@ const fs = require('fs')
 //----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
 function replaceCommentWithSpace(text) {
-	return text.replace(/\/\*[\s\S]*?\*\/|\/\/.*|/g, (match) => {
-		return " ".repeat(match.length)
+	let textWithoutComment = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, (match) => {
+		return match.replace(/[^\n\r]*/g, submatch => {
+			return " ".repeat(submatch.length)})
 	})
+	return textWithoutComment
 }
 
 //----------------------------------------------------------------------------

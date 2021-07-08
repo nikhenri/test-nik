@@ -67,8 +67,9 @@ async function getCompilationFileList(fileNameWithoutExt, tempFilePath) {
 //----------------------------------------------------------------------------
 // ** Error: C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(478): (vlog-2730) Undefined variable: 'vg_Read_Datas'.
 // ** Error: (vlog-13069) C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(32): near "input": syntax error, unexpected input, expecting ')'.
+// ** Error (suppressible): C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(226): (vlog-2623) Undefined variable: i_cfg_axi_aclk_p.
 function getFirstErrorInfo(text) {
-    let matchAll = Array.from(text.matchAll(/\*\* Error:.*? ([^(]*)\((\d+)\): (?:\(.*?\) )?(.*)/g))
+    let matchAll = Array.from(text.matchAll(/\*\* Error.*?:.*? ([^(]*)\((\d+)\): (?:\(.*?\) )?(.*)/g))
 	if(!matchAll.length) return {line:9999, msg:text} //in case regexp FAIL
     //let path = matchAll[0][1]
     let line = parseInt(matchAll[0][2])-1
