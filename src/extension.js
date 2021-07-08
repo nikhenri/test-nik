@@ -20,7 +20,7 @@ async function activate(context) {
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
 		vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
-		vscode.workspace.onDidChangeTextDocument(event =>	{
+		vscode.workspace.onDidChangeTextDocument(event => {
 			if(vscode.languages.match('systemverilog', event.document))
 				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)
 		}),
