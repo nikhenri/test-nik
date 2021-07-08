@@ -8,11 +8,10 @@ const utils = require('./utils')
 //----------------------------------------------------------------------------
 const collection = vscode.languages.createDiagnosticCollection('nik');
 const tempDir = os.tmpdir().replace(/\\/g,"/")
-console.log(`tempWorkDir: ${tempDir}`)
 const tempWorkDir = tempDir + "/work"
 const tempFilePath = tempDir + "/tmp.sv"
 
-if(fs.existsSync(tempWorkDir)) fs.rmdirSync(tempWorkDir, { recursive: true })
+//if(fs.existsSync(tempWorkDir)) fs.rmdirSync(tempWorkDir, { recursive: true }) //is it needed ?
 
 //----------------------------------------------------------------------------
 async function updateDiagnostic() {
@@ -26,18 +25,14 @@ async function updateDiagnostic() {
 	console.log(cmdStr)
 
 	child_process.exec(cmdStr, (error, stdout, stderr) => {
-		// console.error(`exec error: ${error}`)
-		console.log(`stdout: ${stdout}`)
-		// console.error(`stderr: ${stderr}`)
 		if(error) {
+		    console.log(stdout)
 			let firstErrorInfo = getFirstErrorInfo(stdout)
-
-			collection.set(vscode.window.activeTextEditor.document.uri, [
-                new vscode.Diagnostic(
-                    new vscode.Range(new vscode.Position(firstErrorInfo.line, 0), new vscode.Position(firstErrorInfo.line, 999)),
-                    firstErrorInfo.msg,
-                    vscode.DiagnosticSeverity.Error
-			    )])
+			collection.set(vscode.window.activeTextEditor.document.uri, [new vscode.Diagnostic(
+                new vscode.Range(new vscode.Position(firstErrorInfo.line, 0), new vscode.Position(firstErrorInfo.line, 999)),
+                firstErrorInfo.msg,
+                vscode.DiagnosticSeverity.Error
+            )])
 		} else {
 			collection.clear();
 		}
