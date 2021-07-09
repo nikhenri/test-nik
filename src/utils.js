@@ -101,7 +101,7 @@ async function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 			importList = await getImportNameListRecursive(importName, importList)
 		} else {
 			// console.log(`Skip ${importName}`)
-			importList.splice(index, index) //remove duplicate
+			importList.splice(index, 1) //remove duplicate
 		}
 	}
 	return importList

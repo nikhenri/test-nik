@@ -5,6 +5,7 @@ const vscode = require('vscode')
 const fs = require('fs')
 const os = require("os")
 const child_process = require('child_process');
+//const path = require('path');
 const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
@@ -29,6 +30,8 @@ async function updateDiagnostic() {
     let tempFilePath = tempDir + `/${fileNameWithoutExt}.sv`
     await saveCurrentTextToTemporayFile(fileNameWithoutExt, tempFilePath)
     let fileStr = await getCompilationFileList(fileNameWithoutExt, tempFilePath)
+	//let fileDir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath).replace(/\\/g,"/")
+	//let cmdStr = `vlog -incr -quiet -warning error -svinputport=relaxed -lint=default -suppress 2181,7061,2254 +incdir+${fileDir} -work ${tempWorkDir} ${fileStr}`
 	let cmdStr = `vlog -incr -quiet -warning error -svinputport=relaxed -lint=default -suppress 2181,7061,2254 -work ${tempWorkDir} ${fileStr}`
 	ouputChannel.log(cmdStr)
 
