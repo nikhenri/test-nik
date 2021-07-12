@@ -15,19 +15,13 @@ const diagnostic = require('./diagnostic')
 function activate(context) {
 	utils.getFilePath() // init all the path
 
-	if (vscode.window.activeTextEditor) diagnostic.updateDiagnostic()
+	diagnostic.updateDiagnostic()
     context.subscriptions.push([
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
 		vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
-		vscode.workspace.onDidChangeTextDocument(event => {
-			if(vscode.languages.match('systemverilog', event.document))
-				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 500)
-		}),
-		vscode.window.onDidChangeActiveTextEditor(editor => {
-			if(editor && vscode.languages.match('systemverilog', editor.document))
-				diagnostic.updateDiagnostic(editor)
-		}),
+		vscode.workspace.onDidChangeTextDocument(event => onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 500)),
+		vscode.window.onDidChangeActiveTextEditor(editor => diagnostic.updateDiagnostic(editor)),
 	])
 }
 

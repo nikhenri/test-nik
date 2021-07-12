@@ -193,6 +193,7 @@ module.exports = {
     getFilePath,
     getFileText,
 	uriToFileNameWithoutExt,
+	filePathToFileNameWithoutExt,
 	indexToPosition,
 	wordIsNumber,
 	wordIsReserved,

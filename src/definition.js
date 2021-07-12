@@ -169,7 +169,7 @@ function getInstanceMatch(text) {
 }
 //----------------------------------------------------------------------------
 function getPortMatch(text, name) {
-	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*\\,`, "gm")))
+	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*`, "gm")))
 }
 
 //----------------------------------------------------------------------------
