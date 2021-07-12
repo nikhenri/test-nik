@@ -84,3 +84,16 @@ function getFirstErrorInfo(text) {
 module.exports = {
 	updateDiagnostic
 }
+
+// "nik":{
+// 	"age": 34,
+// 	"interest": [ "a", "b", "c"]
+// }
+
+// const config = vscode.workspace.getConfiguration('nik') 
+// const intereset = config.get("interest", []) 
+// for (let i of intereset)
+// 	console.log(`>> ${i}`)
+// console.log("done");
+
+// match last word \w+\s*$
