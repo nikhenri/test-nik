@@ -32,45 +32,45 @@ async function searchLocation(document, position) {
 	// Module instance ?
 	if(isModuleInstance(lineOfWordAndTextAfter, word)) { // ipv4 # (
 		console.log(`Searching module: ${word}`)
-		location = getLocation(word, (text) => {return getModuleDeclarationMatch(text)})
+		location = getLocation(word, (text) => getModuleDeclarationMatch(text))
 		if(location) return location
 	}
 	// Function ?
 	if(isFunction(lineOfWordAndTextAfter, word)) { // something(arg)
 		console.log(`Searching function: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text)=>{return getFunctionDeclarationMatch(text, word)})
+		location = await getLocation(fileNameWithoutExt, (text) => getFunctionDeclarationMatch(text, word))
 		if(location) return location
 	}
 	// Typedef (struct, enum) ?
 	if(isTypedef(lineOfWordAndTextAfter, word)) { // aType_t my_signal;
 		console.log(`Searching typeDef: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text)=>{return getTypedefDeclarationMatch(text, word)})
+		location = await getLocation(fileNameWithoutExt, (text) => getTypedefDeclarationMatch(text, word))
 		if(location) return location
 	}
 	// Module decalaration ?
 	if(isModuleDeclaration(lineOfWordAndTextAfter, word)) { // module ipv4 #(
 		console.log(`Searching instance: ${word}`)
-		location = await getLocation(null, (text)=>{return getModuleInstanceMatch(text, word)})
+		location = await getLocation(null, (text) => getModuleInstanceMatch(text, word))
 		if(location) return location
 	}
 	// Import ?
 	if (isImport(lineOfWordAndTextAfter, word)) { // import pkg::*;
 		console.log(`Searching package: ${word}`)
-		location = await getLocation(word, (text) => {return getPackageMatch(text)})
+		location = await getLocation(word, (text) => getPackageMatch(text))
 		if(location) return location
 	}
 	// port ?
 	if (isPort(lineOfWordAndTextAfter, word)) { // .toto (),
 		console.log(`Searching port: ${word}`)
-		let textBeforeLine = utils.replaceCommentWithSpace(document.getText().substring(0, offsetStartOfLine-1))
-		let LastmoduleName = getInstanceMatch(textBeforeLine).slice(-1)[0] //get last instance name
-		location = await getLocation(LastmoduleName, (text)=>{return getPortMatch(text, word)})
+		let text = (await utils.getFileText(fileNameWithoutExt)).text
+		let instanceName = getInstanceAtLine(text, position.line)
+		location = await getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
 		if(location) return location
 	}
 
 	// If we found nothing, try to get the first occurance
 	console.log(`Searching 1er line of ${word}`)
-	location = await getLocation(fileNameWithoutExt, (text) => {return getWordFirstOccuranceMatch(text, word)})
+	location = await getLocation(fileNameWithoutExt, (text) => getWordFirstOccuranceMatch(text, word))
 	if(location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
 }
 
@@ -160,17 +160,13 @@ function isPort(text, name) {
 
 //----------------------------------------------------------------------------
 function getInstanceMatch(text) {
-	let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm));
-	if (matchAll.length) {
-		let groupMatch = matchAll.map(x => x[1])
-		return groupMatch
-	}
-	return [];
+	//let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm));
+	return Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([^;]*\)\s*)?\w+\s*\(\s*\./gm));
 }
 //----------------------------------------------------------------------------
-function getPortMatch(text, name) {
-	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*`, "gm")))
-}
+// function getPortMatch(text, name) {
+// 	return Array.from(text.matchAll(new RegExp(`^[ ].*?\\b${name}\\b\\s*(?:\\[.*?\\]\\s*)*`, "gm")))
+// }
 
 //----------------------------------------------------------------------------
 function getWordOccuranceMatch(text, name) {
@@ -184,6 +180,17 @@ function getWordFirstOccuranceMatch(text, name) {
     return match
 }
 
+//----------------------------------------------------------------------------
+function getInstanceAtLine(text, line) {
+	let allInstanceName = getInstanceMatch(text)
+	let instanceName
+	for (let inst of allInstanceName) {
+		let currentLine = utils.indexToPosition(text, inst.index).line
+		if (currentLine > line) break
+		instanceName = inst[1]
+	}
+	return instanceName
+}
 //----------------------------------------------------------------------------
 module.exports = {
 	provideDefinition,
