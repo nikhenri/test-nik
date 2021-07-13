@@ -13,9 +13,18 @@ const ouputChannel = require('./ouputChannel')
 const collection = vscode.languages.createDiagnosticCollection('nik');
 const tempDir = os.tmpdir().replace(/\\/g,"/")
 const tempWorkDir = tempDir + "/work"
-const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
-const incdirStr = `+incdir+${workspaceFolder}/` + vscode.workspace.getConfiguration('nik').get("incdir", []).join(` +incdir+${workspaceFolder}/`)
+let incdirStr
 
+//----------------------------------------------------------------------------
+function loadWorkspaceConfig() {
+	let workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
+	let incdirList = vscode.workspace.getConfiguration('nik').get("incdir")
+	if(incdirList)
+		incdirStr = `+incdir+${workspaceFolder}/` + incdirList.join(` +incdir+${workspaceFolder}/`)
+	else
+		incdirStr = ""
+	console.log(`incdirStr: ${incdirStr}`);
+}
 //----------------------------------------------------------------------------
 // Save activeTextEditor text in file
 // search activeTextEditor dependancy
@@ -25,6 +34,7 @@ const incdirStr = `+incdir+${workspaceFolder}/` + vscode.workspace.getConfigurat
 async function updateDiagnostic() {
     console.log("Diagnostic")
 	if(!vscode.window.activeTextEditor || !vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document)) return
+	if(incdirStr == undefined) loadWorkspaceConfig()
 	await utils.getFileText() // init
 	if(fs.existsSync(tempWorkDir)) fs.rmdirSync(tempWorkDir, { recursive: true })
 
@@ -101,7 +111,8 @@ function getFirstErrorInfo(text) {
 
 //----------------------------------------------------------------------------
 module.exports = {
-	updateDiagnostic
+	updateDiagnostic,
+	loadWorkspaceConfig,
 }
 
 // ** Error (suppressible): c:/Users/common/pkg/cbdma_pkg.sv(214): (vlog-13233) Design unit "cbdma_pkg_sv_unit" already exists and will be overwritten. Overwriting SystemVerilog $unit with different source files.

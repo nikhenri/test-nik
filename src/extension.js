@@ -22,6 +22,7 @@ function activate(context) {
 		vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
 		vscode.workspace.onDidChangeTextDocument(event => onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 500)),
 		vscode.window.onDidChangeActiveTextEditor(editor => diagnostic.updateDiagnostic(editor)),
+		vscode.workspace.onDidChangeConfiguration(event => diagnostic.loadWorkspaceConfig())
 	])
 }
 
