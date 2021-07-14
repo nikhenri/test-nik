@@ -4,6 +4,7 @@
 const vscode = require('vscode')
 const path = require('path')
 const fs = require('fs')
+const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
@@ -24,7 +25,7 @@ async function getFilePath(fileNameWithoutExt) {
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
-		console.log(`Updating findFiles for ${fileNameWithoutExt}...`)
+		ouputChannel.log(`Updating findFiles for ${fileNameWithoutExt}...`)
         let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
 		getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
 
@@ -33,7 +34,7 @@ async function getFilePath(fileNameWithoutExt) {
 		else // if we want all file
 			filePath = getFilePath.listOfPath
     }
-	if(!filePath) console.log(`Was not able to found '${fileNameWithoutExt}'`)
+	if(!filePath) ouputChannel.log(`Was not able to found '${fileNameWithoutExt}'`)
 	return filePath
 }
 

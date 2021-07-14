@@ -3,18 +3,19 @@
 //----------------------------------------------------------------------------
 const vscode = require('vscode')
 const utils = require('./utils')
+const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 // Return a vscode location
 async function provideDefinition (document, position) {
-	console.log("CTRL")
+	ouputChannel.log("CTRL")
 
 	utils.getFileText() // init
 
 	let locationList = await searchLocation(document, position)
 	if(locationList) return locationList
 
-	console.log("Not able to Provide");
+	ouputChannel.log("Not able to Provide definition");
 }
 
 //----------------------------------------------------------------------------
@@ -22,7 +23,7 @@ async function provideDefinition (document, position) {
 async function searchLocation(document, position) {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(utils.wordIsNumber(word) || utils.wordIsReserved(word)) return
-	console.log(`Word: ${word}`)
+	// console.log(`Word: ${word}`)
 
 	let offsetStartOfLine = document.offsetAt(new vscode.Position(position.line, 0))
 	let lineOfWordAndTextAfter = utils.replaceCommentWithSpace(document.getText().substring(offsetStartOfLine))
@@ -31,45 +32,47 @@ async function searchLocation(document, position) {
 
 	// Module instance ?
 	if(isModuleInstance(lineOfWordAndTextAfter, word)) { // ipv4 # (
-		console.log(`Searching module: ${word}`)
+		ouputChannel.log(`Searching module: ${word}`)
 		location = getLocation(word, (text) => getModuleDeclarationMatch(text))
 		if(location) return location
 	}
-	// Function ?
-	if(isFunction(lineOfWordAndTextAfter, word)) { // something(arg)
-		console.log(`Searching function: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text) => getFunctionDeclarationMatch(text, word))
-		if(location) return location
-	}
+
 	// Typedef (struct, enum) ?
 	if(isTypedef(lineOfWordAndTextAfter, word)) { // aType_t my_signal;
-		console.log(`Searching typeDef: ${word}`)
+		ouputChannel.log(`Searching typeDef: ${word}`)
 		location = await getLocation(fileNameWithoutExt, (text) => getTypedefDeclarationMatch(text, word))
 		if(location) return location
 	}
 	// Module decalaration ?
 	if(isModuleDeclaration(lineOfWordAndTextAfter, word)) { // module ipv4 #(
-		console.log(`Searching instance: ${word}`)
+		ouputChannel.log(`Searching instance: ${word}`)
 		location = await getLocation(null, (text) => getModuleInstanceMatch(text, word))
 		if(location) return location
 	}
 	// Import ?
 	if (isImport(lineOfWordAndTextAfter, word)) { // import pkg::*;
-		console.log(`Searching package: ${word}`)
+		ouputChannel.log(`Searching package: ${word}`)
 		location = await getLocation(word, (text) => getPackageMatch(text))
 		if(location) return location
 	}
 	// port ?
-	if (isPort(lineOfWordAndTextAfter, word)) { // .toto (),
-		console.log(`Searching port: ${word}`)
+	let wordWithLinePrefix = document.lineAt(position).text.substr(0, document.getWordRangeAtPosition(position).end.character)
+	if (isPort(wordWithLinePrefix, word)) { // .toto (),
+		ouputChannel.log(`Searching port: ${word}`)
 		let text = (await utils.getFileText(fileNameWithoutExt)).text
 		let instanceName = getInstanceAtLine(text, position.line)
 		location = await getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
 		if(location) return location
 	}
-
+	// Function ?
+	let wordWithLineSuffix = document.lineAt(position).text.substr(document.getWordRangeAtPosition(position).start.character)
+	if(isFunction(wordWithLineSuffix, word)) { // something(arg)
+		ouputChannel.log(`Searching function: ${word}`)
+		location = await getLocation(fileNameWithoutExt, (text) => getFunctionDeclarationMatch(text, word))
+		if(location) return location
+	}
 	// If we found nothing, try to get the first occurance
-	console.log(`Searching 1er line of ${word}`)
+	ouputChannel.log(`Searching 1er line of ${word}`)
 	location = await getLocation(fileNameWithoutExt, (text) => getWordFirstOccuranceMatch(text, word))
 	if(location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
 }
@@ -90,14 +93,13 @@ async function getLocation(fileNameWithoutExt, funcMatch) {
 		for (let match of matchInFile.match) { //for all match in that file
 			let position_start = utils.indexToPosition(matchInFile.text, match.index)
 			let position_end = utils.indexToPosition(matchInFile.text, match.index + match[0].length)
-			console.log(`Found match in ${matchInFile.path}=> line: ${position_start.line}(${position_start.character}) to line: ${position_end.line}(${position_end.character})`)
+			ouputChannel.log(`Found match in ${matchInFile.path}=> line:${position_start.line}, char:${position_start.character} to line:${position_end.line}, char:${position_end.character}`)
 			// locationList.push(new vscode.Location(vscode.Uri.file(matchInFile.path), position))
 
 			locationList.push({targetRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_end.line, 999)),
 							   targetSelectionRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_start.line, 999)),
 							   targetUri: vscode.Uri.file(matchInFile.path)
 			})
-			console.log();
 		}
     }
 
@@ -115,7 +117,7 @@ function getModuleDeclarationMatch(text) {
 }
 //----------------------------------------------------------------------------
 function isFunction(text, name) {
-	return text.match(new RegExp(`(?<!\\s\\.)\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
+	return text.match(new RegExp(`^\\b${name}\\b\\s*\\([\\S\\s]*?\\)`))
 }
 
 //----------------------------------------------------------------------------
@@ -155,7 +157,7 @@ function getPackageMatch(text) {
 
 //----------------------------------------------------------------------------
 function isPort(text, name) {
-	return text.match(new RegExp(`^[ ]*\\.${name}\\b`))
+	return text.match(new RegExp(`^[ ]*\\.\\s*${name}\\b$`))
 }
 
 //----------------------------------------------------------------------------

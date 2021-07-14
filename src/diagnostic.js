@@ -32,8 +32,7 @@ function loadWorkspaceConfig() {
 // Extract info from cmd stdout
 // Add error wave
 async function updateDiagnostic() {
-    console.log("Diagnostic")
-	if(!vscode.window.activeTextEditor || !vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document)) return
+    ouputChannel.log("Diagnostic")
 	if(incdirStr == undefined) loadWorkspaceConfig()
 	await utils.getFileText() // init
 	if(fs.existsSync(tempWorkDir)) fs.rmdirSync(tempWorkDir, { recursive: true })
@@ -75,7 +74,7 @@ async function updateDiagnostic() {
             )])
 		} else {
 			ouputChannel.log("no error!\n");
-			collection.clear();
+			collection.delete(vscode.Uri.file(filePath));
 		}
 	})
 }

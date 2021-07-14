@@ -3,12 +3,13 @@
 //----------------------------------------------------------------------------
 const vscode = require('vscode')
 const utils = require('./utils')
+const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 async function provideCompletionItems(document, position){
-	console.log(".")
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
+	ouputChannel.log(".")
 	utils.getFileText() // init
 
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
@@ -22,13 +23,14 @@ async function provideCompletionItems(document, position){
 		if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
 			let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
 			let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
+			ouputChannel.log("Found struct members")
 			return completionList
 		} else { // if we are not the last section, init search text and filename
 			textToSearchTypeName = matchInFileObj.match[0][0]
 			fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
 		}
 	}
-	console.log("Not able to Complete");
+	ouputChannel.log("Not able to Complete");
 }
 
 //----------------------------------------------------------------------------
