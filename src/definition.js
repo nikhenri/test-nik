@@ -15,7 +15,7 @@ async function provideDefinition (document, position) {
 	let locationList = await searchLocation(document, position)
 	if(locationList) return locationList
 
-	ouputChannel.log("Not able to Provide definition");
+	ouputChannel.log("Not able to Provide definition")
 }
 
 //----------------------------------------------------------------------------
@@ -162,8 +162,8 @@ function isPort(text, name) {
 
 //----------------------------------------------------------------------------
 function getInstanceMatch(text) {
-	//let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm));
-	return Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([^;]*\)\s*)?\w+\s*\(\s*\./gm));
+	//let matchAll = Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([\s\S]*?\)\s*)?\w+\s*\(/gm))
+	return Array.from(text.matchAll(/^[ ]*(\w+)\s*(?:#\s*\([^;]*\)\s*)?\w+\s*\(\s*\./gm))
 }
 //----------------------------------------------------------------------------
 // function getPortMatch(text, name) {

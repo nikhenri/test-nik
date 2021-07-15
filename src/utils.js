@@ -62,7 +62,7 @@ async function getFileText(fileNameWithoutExt) {
 		getFileText.textObj[fileNameWithoutExt] = {path, text, fileNameWithoutExt} //save for future call
 	}
 
-	return getFileText.textObj[fileNameWithoutExt];
+	return getFileText.textObj[fileNameWithoutExt]
 }
 
 //----------------------------------------------------------------------------
@@ -201,7 +201,7 @@ module.exports = {
 	getMatchInFileOrImport,
 	getMatchInAllFile,
 	getImportNameListRecursive,
-};
+}
 
 //----------------------------------------------------------------------------
 // Catch to see the error

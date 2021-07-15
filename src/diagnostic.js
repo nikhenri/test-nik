@@ -4,13 +4,13 @@
 const vscode = require('vscode')
 const fs = require('fs')
 const os = require("os")
-const child_process = require('child_process');
-const path = require('path');
+const child_process = require('child_process')
+const path = require('path')
 const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-const collection = vscode.languages.createDiagnosticCollection('nik');
+const collection = vscode.languages.createDiagnosticCollection('nik')
 const tempDir = os.tmpdir().replace(/\\/g,"/")
 const tempWorkDir = tempDir + "/work"
 let incdirStr
@@ -23,7 +23,7 @@ function loadWorkspaceConfig() {
 		incdirStr = `+incdir+${workspaceFolder}/` + incdirList.join(` +incdir+${workspaceFolder}/`)
 	else
 		incdirStr = ""
-	console.log(`incdirStr: ${incdirStr}`);
+	console.log(`incdirStr: ${incdirStr}`)
 }
 //----------------------------------------------------------------------------
 // Save activeTextEditor text in file
@@ -32,7 +32,8 @@ function loadWorkspaceConfig() {
 // Extract info from cmd stdout
 // Add error wave
 async function updateDiagnostic() {
-    ouputChannel.log("Diagnostic")
+    if(path.parse(vscode.window.activeTextEditor.document.uri.fsPath).ext == ".svh") return
+	ouputChannel.log("Diagnostic")
 	if(incdirStr == undefined) loadWorkspaceConfig()
 	await utils.getFileText() // init
 	if(fs.existsSync(tempWorkDir)) fs.rmdirSync(tempWorkDir, { recursive: true })
@@ -73,8 +74,8 @@ async function updateDiagnostic() {
                 vscode.DiagnosticSeverity.Error
             )])
 		} else {
-			ouputChannel.log("no error!\n");
-			collection.delete(vscode.Uri.file(filePath));
+			ouputChannel.log("no error!\n")
+			collection.delete(vscode.Uri.file(filePath))
 		}
 	})
 }

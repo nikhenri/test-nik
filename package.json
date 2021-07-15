@@ -3,7 +3,7 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "2.0.5",
+	"version": "2.0.6",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
@@ -24,6 +24,7 @@
 			{
 				"id": "systemverilog",
 				"extensions": [
+					".svh",
 					".sv",
 					".v"
 				],

@@ -30,7 +30,7 @@ async function provideCompletionItems(document, position){
 			fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
 		}
 	}
-	ouputChannel.log("Not able to Complete");
+	ouputChannel.log("Not able to Complete")
 }
 
 //----------------------------------------------------------------------------
