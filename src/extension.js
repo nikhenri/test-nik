@@ -1,8 +1,6 @@
 //----------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------
-console.log('Entering extension.js...')
-
 const vscode = require('vscode')
 const utils = require('./utils')
 const definition = require('./definition')
@@ -10,6 +8,10 @@ const terminal = require('./terminal')
 const completionItems = require('./completionItems')
 const diagnostic = require('./diagnostic')
 const ouputChannel = require('./ouputChannel')
+
+//----------------------------------------------------------------------------
+let extensionId = 'NikHenri.nikhenri'
+ouputChannel.log(`Loading ${extensionId} v${vscode.extensions.getExtension(extensionId)['packageJSON']['version']}...`)
 
 //----------------------------------------------------------------------------
 // Register all functionnality we add
