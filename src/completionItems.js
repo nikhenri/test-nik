@@ -6,20 +6,20 @@ const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-async function provideCompletionItems(document, position){
+function provideCompletionItems(document, position){
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
 	ouputChannel.log(".")
 	utils.getFileText() // init
 
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
-	let textToSearchTypeName = (await utils.getFileText(fileNameWithoutExt)).text
+	let textToSearchTypeName = utils.getFileText(fileNameWithoutExt).text
 	let groupMatch = getStructSectionWithoutIndex(linePrefix) //split the string in section
 
 	for (let signalName of groupMatch) {
 		let structTypeName = getTypeName(textToSearchTypeName, signalName)
 		if(utils.wordIsReserved(structTypeName)) return // ex: logic toto;
-		let matchInFileObj = await utils.getMatchInFileOrImport(fileNameWithoutExt, (text)=> searchStructInText(text, structTypeName))
+		let matchInFileObj = utils.getMatchInFileOrImport(fileNameWithoutExt, (text)=> searchStructInText(text, structTypeName))
 		if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
 			let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
 			let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))

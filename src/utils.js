@@ -4,7 +4,12 @@
 const vscode = require('vscode')
 const path = require('path')
 const fs = require('fs')
+const glob = require('glob')
+
 const ouputChannel = require('./ouputChannel')
+
+//----------------------------------------------------------------------------
+const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
 
 //----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
@@ -20,15 +25,15 @@ function replaceCommentWithSpace(text) {
 // Will search all file that have the name 'fileNameWithoutExt' with extension .sv or .v
 // Ex: toto => return C:/something/toto.sv
 // If 'fileNameWithoutExt' is false, will return a list of all the file with extension .sv or .v
-async function getFilePath(fileNameWithoutExt) {
+function getFilePath(fileNameWithoutExt) {
 	let filePath
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		ouputChannel.log(`Updating findFiles for ${fileNameWithoutExt}...`)
-        let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
-		getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
-
+        //let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
+		//getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
+        getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
 		if (fileNameWithoutExt) //if we want a specific file
 			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
 		else // if we want all file
@@ -43,7 +48,7 @@ async function getFilePath(fileNameWithoutExt) {
 // This function will save the text in memory
 // So the next call for same file will return the previous read value
 // Calling the fct without parameter clear the memory
-async function getFileText(fileNameWithoutExt) {
+function getFileText(fileNameWithoutExt) {
 	if(!fileNameWithoutExt) { // clear memory
 		getFileText.textObj = {}
 		return
@@ -51,7 +56,7 @@ async function getFileText(fileNameWithoutExt) {
 		throw("getFileText need to be init")
 
 	if(!(fileNameWithoutExt in getFileText.textObj)) { // not already read
-		let path = await getFilePath(fileNameWithoutExt)
+		let path = getFilePath(fileNameWithoutExt)
 		let text
 		if(!path) return
 		if(uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri) == fileNameWithoutExt) //file currently open
@@ -83,8 +88,8 @@ function indexToPosition (text, index) {
 }
 //----------------------------------------------------------------------------
 // return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
-async function getImportNameList(fileNameWithoutExt) {
-	let text = (await getFileText(fileNameWithoutExt)).text
+function getImportNameList(fileNameWithoutExt) {
+	let text = getFileText(fileNameWithoutExt).text
 	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
 	if (matchAll.length) {
 		return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
@@ -92,14 +97,14 @@ async function getImportNameList(fileNameWithoutExt) {
 	return matchAll
 }
 //----------------------------------------------------------------------------
-async function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
+function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 	// console.log(`Inspecting ${fileNameWithoutExt}`)
-	let importListOfFile = await getImportNameList(fileNameWithoutExt)
+	let importListOfFile = getImportNameList(fileNameWithoutExt)
 	for (let importName of importListOfFile) {
 		let index = importList.findIndex(x => x == importName)
 		importList.push(importName) // add to the end
 		if(index == -1) { // if we have not scanned this yet
-			importList = await getImportNameListRecursive(importName, importList)
+			importList = getImportNameListRecursive(importName, importList)
 		} else {
 			// console.log(`Skip ${importName}`)
 			importList.splice(index, 1) //remove duplicate
@@ -147,11 +152,11 @@ function wordIsNumber(word) {
 // matchInFileObj.text = fileText
 // matchInFileObj.match = MatchAll object from regEx
 // matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
-async function getMatchInAllFile(funcMatch) {
-	let fileNameWithoutExtList = (await getFilePath()).map(x => filePathToFileNameWithoutExt(x))
+function getMatchInAllFile(funcMatch) {
+	let fileNameWithoutExtList = getFilePath().map(x => filePathToFileNameWithoutExt(x))
 	let matchInFileObjList = []
 	for (let fileNameWithoutExt of fileNameWithoutExtList) {
-        let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
+        let matchInFileObj = getMatchInFile(fileNameWithoutExt, funcMatch)
 		if(matchInFileObj) matchInFileObjList.push(matchInFileObj)
 	}
 	return matchInFileObjList
@@ -163,27 +168,27 @@ async function getMatchInAllFile(funcMatch) {
 // matchInFileObj.text = fileText
 // matchInFileObj.match = MatchAll object from regEx
 // matchInFileObj.fileNameWithoutExt = fileNameWithoutExt
-async function getMatchInFileOrImport(fileNameWithoutExt, funcMatch) {
-	let matchInFileObj = await getMatchInFile(fileNameWithoutExt, funcMatch)
+function getMatchInFileOrImport(fileNameWithoutExt, funcMatch) {
+	let matchInFileObj = getMatchInFile(fileNameWithoutExt, funcMatch)
 	if(matchInFileObj) return matchInFileObj
-	matchInFileObj = await getMatchInImport(fileNameWithoutExt, funcMatch)
+	matchInFileObj = getMatchInImport(fileNameWithoutExt, funcMatch)
 	if(matchInFileObj) return matchInFileObj
 }
 
 //----------------------------------------------------------------------------
 // use a match function to see if sucessfull in the file
 // if MATCH => return fileTextObj that containt .path .text .fileNameWithoutExt .match
-async function getMatchInFile(fileNameWithoutExt, funcMatch) {
-	let fileTextObj = await getFileText(fileNameWithoutExt)
+function getMatchInFile(fileNameWithoutExt, funcMatch) {
+	let fileTextObj = getFileText(fileNameWithoutExt)
 	fileTextObj.match = funcMatch(fileTextObj.text)
 	if(fileTextObj.match.length) return fileTextObj
 }
 
 //----------------------------------------------------------------------------
 // check in the import of the file if there a match using a match function
-async function getMatchInImport(fileNameWithoutExt, funcMatch) {
-	for (let importfileNameWithoutExt of await getImportNameList(fileNameWithoutExt)) {
-		let matchInFileObj = await getMatchInFile(importfileNameWithoutExt, funcMatch)
+function getMatchInImport(fileNameWithoutExt, funcMatch) {
+	for (let importfileNameWithoutExt of getImportNameList(fileNameWithoutExt)) {
+		let matchInFileObj = getMatchInFile(importfileNameWithoutExt, funcMatch)
 		if(matchInFileObj) return matchInFileObj
 	}
 }
@@ -214,20 +219,5 @@ module.exports = {
 // 			// console.trace()
 // 			throw("Fuck off")
 // 		}
-// 	}
-// }
-
-//----------------------------------------------------------------------------
-// function tryCatchAsync = (func) => {
-// 	return (...restArgs) => {
-// 		func(...restArgs).
-// 		then((ret)=>{
-// 			console.log(ret)
-// 			return ret
-// 		}).catch((error) => {
-// 			console.error(`>> ${error}`)
-// 			// console.trace()
-// 			throw("Fuck off")
-// 		})
 // 	}
 // }

@@ -19,25 +19,25 @@ const tempDir = os.tmpdir().replace(/\\/g,"/")
 // create and execute vlog cmd
 // Extract info from cmd stdout
 // Add error wave
-async function updateDiagnostic() {
+function updateDiagnostic() {
     if(path.parse(vscode.window.activeTextEditor.document.uri.fsPath).ext == ".svh") return
 
     ouputChannel.log("Diagnostic")
-    await utils.getFileText() // init
+    utils.getFileText() // init
     let fileNameWithoutExt = utils.uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri)
 
-    fs.mkdtemp(tempDir + '/work_', async (err, directory) => {
-        await saveCurrentTextToTemporayFile(fileNameWithoutExt, directory)
-        let cmdStr = await getCompilationCommand(fileNameWithoutExt, directory)
+    fs.mkdtemp(tempDir + '/work_', (err, directory) => {
+        saveCurrentTextToTemporayFile(fileNameWithoutExt, directory)
+        let cmdStr = getCompilationCommand(fileNameWithoutExt, directory)
         child_process.exec(cmdStr, (error, stdout) => {compilationCommandCallback(fileNameWithoutExt, directory, error, stdout)})
     })
 }
 
 //----------------------------------------------------------------------------
 // save the current live text in order to compile it
-async function saveCurrentTextToTemporayFile(fileNameWithoutExt, directory) {
+function saveCurrentTextToTemporayFile(fileNameWithoutExt, directory) {
     let tempFilePath = getTempFilePath(fileNameWithoutExt, directory)
-    let text = (await utils.getFileText(fileNameWithoutExt)).text
+    let text = utils.getFileText(fileNameWithoutExt).text
     fs.writeFileSync(tempFilePath, text)
 }
 
@@ -48,23 +48,23 @@ function getTempFilePath (fileNameWithoutExt, directory) {
 
 //----------------------------------------------------------------------------
 // get the vlog command to run in order to compile the file with pkg
-async function getCompilationCommand (fileNameWithoutExt, directory) {
+function getCompilationCommand (fileNameWithoutExt, directory) {
     let fileDir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath).replace(/\\/g,"/")
     let incdirStr = getIncdirStrFromSettings()
-    let fileStr = await getCompilationFileList(fileNameWithoutExt, directory)
+    let fileStr = getCompilationFileList(fileNameWithoutExt, directory)
     let cmdStr = `vlog -quiet -warning error -svinputport=relaxed -lint=default -suppress 2181,7061,2254 -work ${directory} +incdir+${fileDir} ${incdirStr} ${fileStr}`
     ouputChannel.log(cmdStr)
     return cmdStr
 }
 //----------------------------------------------------------------------------
 // get the string in order of the file that need to be compiled (pkg first)
-async function getCompilationFileList(fileNameWithoutExt, directory) {
+function getCompilationFileList(fileNameWithoutExt, directory) {
     let tempFilePath = getTempFilePath(fileNameWithoutExt, directory)
-    let importNameList = await utils.getImportNameListRecursive(fileNameWithoutExt)
+    let importNameList = utils.getImportNameListRecursive(fileNameWithoutExt)
     importNameList.reverse()
     let fileStr = ""
     for (let fileNameWithoutExtList of importNameList)
-        fileStr += await utils.getFilePath(fileNameWithoutExtList) + " "
+        fileStr += utils.getFilePath(fileNameWithoutExtList) + " "
     fileStr += tempFilePath
     return fileStr
 }
@@ -86,11 +86,11 @@ function getIncdirStrFromSettings() {
 
 //----------------------------------------------------------------------------
 // The function call after the compilation is done, analyse stdout and add/remove error
-async function compilationCommandCallback(fileNameWithoutExt, directory, error, stdout) {
+function compilationCommandCallback(fileNameWithoutExt, directory, error, stdout) {
     fs.rmdir(directory, { recursive: true }, ()=>{})
     if(error) {
         ouputChannel.log(stdout)
-        let {line, msg} = await getLineAndMsgFromStdout(stdout, fileNameWithoutExt)
+        let {line, msg} = getLineAndMsgFromStdout(stdout, fileNameWithoutExt)
         addErrorOnActiveTextEditor(line, msg)
     } else {
         ouputChannel.log("no error!\n")
@@ -100,13 +100,13 @@ async function compilationCommandCallback(fileNameWithoutExt, directory, error, 
 
 //----------------------------------------------------------------------------
 // from the stdout get the where (line) and what (msg) to display as error
-async function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
+function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
     let line, msg
     try {
         let firstErrorInfo = getFirstErrorInfo(stdout)
         msg = firstErrorInfo.msg
         if(firstErrorInfo.fileNameWithoutExt != fileNameWithoutExt) { // if from import file
-            line = await getImportLine(fileNameWithoutExt, firstErrorInfo.fileNameWithoutExt)
+            line = getImportLine(fileNameWithoutExt, firstErrorInfo.fileNameWithoutExt)
         } else { // error is in current file
             line = firstErrorInfo.line
         }
@@ -132,8 +132,8 @@ function getFirstErrorInfo(text) {
 
 //----------------------------------------------------------------------------
 // found the import:: line in a file
-async function getImportLine(fileNameWithoutExt, importName) {
-    let txt = (await utils.getFileText(fileNameWithoutExt)).text
+function getImportLine(fileNameWithoutExt, importName) {
+    let txt = utils.getFileText(fileNameWithoutExt).text
     let index = txt.match(new RegExp(`\\b${importName}::`)).index //seatch import
     let line = utils.indexToPosition(txt, index).line
     return line

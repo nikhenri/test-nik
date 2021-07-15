@@ -7,12 +7,12 @@ const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 // Return a vscode location
-async function provideDefinition (document, position) {
+function provideDefinition (document, position) {
 	ouputChannel.log("CTRL")
 
 	utils.getFileText() // init
 
-	let locationList = await searchLocation(document, position)
+	let locationList = searchLocation(document, position)
 	if(locationList) return locationList
 
 	ouputChannel.log("Not able to Provide definition")
@@ -20,7 +20,7 @@ async function provideDefinition (document, position) {
 
 //----------------------------------------------------------------------------
 // Based on the word and text following the word, return a goto vscode position
-async function searchLocation(document, position) {
+function searchLocation(document, position) {
 	let word = document.getText(document.getWordRangeAtPosition(position))
 	if(utils.wordIsNumber(word) || utils.wordIsReserved(word)) return
 	// console.log(`Word: ${word}`)
@@ -40,40 +40,40 @@ async function searchLocation(document, position) {
 	// Typedef (struct, enum) ?
 	if(isTypedef(lineOfWordAndTextAfter, word)) { // aType_t my_signal;
 		ouputChannel.log(`Searching typeDef: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text) => getTypedefDeclarationMatch(text, word))
+		location = getLocation(fileNameWithoutExt, (text) => getTypedefDeclarationMatch(text, word))
 		if(location) return location
 	}
 	// Module decalaration ?
 	if(isModuleDeclaration(lineOfWordAndTextAfter, word)) { // module ipv4 #(
 		ouputChannel.log(`Searching instance: ${word}`)
-		location = await getLocation(null, (text) => getModuleInstanceMatch(text, word))
+		location = getLocation(null, (text) => getModuleInstanceMatch(text, word))
 		if(location) return location
 	}
 	// Import ?
 	if (isImport(lineOfWordAndTextAfter, word)) { // import pkg::*;
 		ouputChannel.log(`Searching package: ${word}`)
-		location = await getLocation(word, (text) => getPackageMatch(text))
+		location = getLocation(word, (text) => getPackageMatch(text))
 		if(location) return location
 	}
 	// port ?
 	let wordWithLinePrefix = document.lineAt(position).text.substr(0, document.getWordRangeAtPosition(position).end.character)
 	if (isPort(wordWithLinePrefix, word)) { // .toto (),
 		ouputChannel.log(`Searching port: ${word}`)
-		let text = (await utils.getFileText(fileNameWithoutExt)).text
+		let text = (utils.getFileText(fileNameWithoutExt)).text
 		let instanceName = getInstanceAtLine(text, position.line)
-		location = await getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
+		location = getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
 		if(location) return location
 	}
 	// Function ?
 	let wordWithLineSuffix = document.lineAt(position).text.substr(document.getWordRangeAtPosition(position).start.character)
 	if(isFunction(wordWithLineSuffix, word)) { // something(arg)
 		ouputChannel.log(`Searching function: ${word}`)
-		location = await getLocation(fileNameWithoutExt, (text) => getFunctionDeclarationMatch(text, word))
+		location = getLocation(fileNameWithoutExt, (text) => getFunctionDeclarationMatch(text, word))
 		if(location) return location
 	}
 	// If we found nothing, try to get the first occurance
 	ouputChannel.log(`Searching 1er line of ${word}`)
-	location = await getLocation(fileNameWithoutExt, (text) => getWordFirstOccuranceMatch(text, word))
+	location = getLocation(fileNameWithoutExt, (text) => getWordFirstOccuranceMatch(text, word))
 	if(location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
 }
 
@@ -81,12 +81,12 @@ async function searchLocation(document, position) {
 // Will try the match function on the file 'fileNameWithoutExt'
 // If no match, try the import of the file
 // If fileNameWithoutExt is FALSE try match on all files instead
-async function getLocation(fileNameWithoutExt, funcMatch) {
+function getLocation(fileNameWithoutExt, funcMatch) {
 	let matchInFileObjList
 	if(fileNameWithoutExt) // single files
-		matchInFileObjList = [await utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)]
+		matchInFileObjList = [utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)]
 	else // all files
-		matchInFileObjList = await utils.getMatchInAllFile(funcMatch)
+		matchInFileObjList = utils.getMatchInAllFile(funcMatch)
 
 	let locationList = []
     for (let matchInFile of matchInFileObjList) { //for files that have a match

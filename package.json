@@ -28,7 +28,7 @@
 					".sv",
 					".v"
 				],
-				"configuration": "./language-configuration.json"
+				"configuration": "./syntaxes/language-configuration.json"
 			}
 		],
 		"grammars": [
@@ -38,11 +38,6 @@
 				"path": "./syntaxes/systemverilog.tmLanguage.json"
 			}
 		]
-	},
-	"scripts": {
-		"lint": "eslint .",
-		"pretest": "npm run lint",
-		"test": "node ./test/runTest.js"
 	},
 	"devDependencies": {
 		"@types/vscode": "^1.56.0",
