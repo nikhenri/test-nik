@@ -9,9 +9,6 @@ const glob = require('glob')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
-
-//----------------------------------------------------------------------------
 // Remplace all comment by space so regex are easier to do
 function replaceCommentWithSpace(text) {
 	let textWithoutComment = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, (match) => {
@@ -33,6 +30,7 @@ function getFilePath(fileNameWithoutExt) {
 		ouputChannel.log(`Updating findFiles for ${fileNameWithoutExt}...`)
         //let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
 		//getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
+		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
         getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
 		if (fileNameWithoutExt) //if we want a specific file
 			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
