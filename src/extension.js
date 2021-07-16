@@ -34,6 +34,8 @@ function activate(context) {
 
 	if(vscode.window.activeTextEditor && vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document))
 		diagnostic.updateDiagnostic()
+
+	ouputChannel.log(`${extensionId} activate() done`)
 }
 
 //----------------------------------------------------------------------------
