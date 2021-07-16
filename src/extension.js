@@ -18,7 +18,6 @@ ouputChannel.log(`Loading ${extensionId} v${vscode.extensions.getExtension(exten
 function activate(context) {
 	utils.getFilePath() // init all the path
 
-	diagnostic.updateDiagnostic()
     context.subscriptions.push([
 		vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems.provideCompletionItems}, '.'),
 		vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
@@ -32,6 +31,9 @@ function activate(context) {
 				diagnostic.updateDiagnostic(editor)
 		}),
 	])
+
+	if(vscode.window.activeTextEditor && vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document))
+		diagnostic.updateDiagnostic()
 }
 
 //----------------------------------------------------------------------------

@@ -28,15 +28,16 @@ function getFilePath(fileNameWithoutExt) {
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
 		ouputChannel.log(`Updating findFiles for ${fileNameWithoutExt}...`)
-        //let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
+		//let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
 		//getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
 		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
-        getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
+		getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
 		if (fileNameWithoutExt) //if we want a specific file
 			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
 		else // if we want all file
 			filePath = getFilePath.listOfPath
-    }
+		ouputChannel.log("Update done")
+	}
 	if(!filePath) ouputChannel.log(`Was not able to found '${fileNameWithoutExt}'`)
 	return filePath
 }
