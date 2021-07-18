@@ -31,6 +31,12 @@
 				"configuration": "./syntaxes/language-configuration.json"
 			}
 		],
+		"snippets": [
+            {
+                "language": "systemverilog",
+                "path": "./syntaxes/snippets.json"
+            }
+        ],
 		"grammars": [
 			{
 				"language": "systemverilog",

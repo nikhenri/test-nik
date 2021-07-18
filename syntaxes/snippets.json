@@ -1,0 +1,179 @@
+{
+    "always_ff": {
+        "prefix": "always_ff",
+        "body": [
+            "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
+            "\t${0:${TM_SELECTED_TEXT}}",
+            "end"
+        ]
+    },
+    
+    "always_ff sync reset": {
+        "prefix": "always_ff sync reset",
+        "body": [
+            "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
+            "\tif(${3:i_reset_p}) begin",
+            "\t\t${5}",
+            "\telse",
+            "\t\t${0}",
+            "\tend",
+            "end"
+        ]
+    },
+
+    "always_comb": {
+        "prefix": "always_comb ",
+        "body": [
+            "always_comb begin: ${1:LABEL}",
+            "\t${0}",
+            "end"
+        ]
+    },
+
+    "if": {
+        "prefix": "if",
+        "body": [
+            "if(${1:condition}) begin: ${2:LABEL}",
+            "\t${3}",
+            "end"
+        ]
+    },
+
+    "if/else": {
+        "prefix": "if/else",
+        "body": [
+            "if(${1:condition}) begin: ${2:LABEL}",
+            "\t${3}",
+            "end else begin: ${4:LABEL}",
+            "\t${5}",
+            "end"
+        ]
+    },
+
+    "if/else if/else": {
+        "prefix": "if/else if/else",
+        "body": [
+            "if(${1:condition}) begin: ${2:LABEL}",
+            "\t${3}",
+            "end else if begin: ${4:LABEL}",
+            "\t${5}",
+            "end else begin: ${6:LABEL}",
+            "\t${7}",
+            "end"
+        ]
+    },
+   
+    "case/default": {
+        "prefix": "case/default",
+        "body": [
+            "case (${1:variable})",
+            "\t${2:condition}: begin: ${3:LABEL}",
+            "\t\t${4}",
+            "\tend",
+            "\tdefault:",
+            "\tbegin: ${5:LABEL}",
+            "\t\t${6}",
+            "\tend",
+            "endcase"
+        ]
+    },
+   
+    "for": {
+        "prefix": "for",
+        "body": [
+            "for (int ${1:i}=0; ${1:i}<=${2:MAX}; ${1:i}++) begin: ${3:LABEL}",
+            "\t${0}",
+            "end"
+        ]
+    },
+
+    "foreach": {
+        "prefix": "foreach",
+        "body": [
+            "foreach (${1:arr}[${2:i}]) begin: ${3:LABEL}",
+            "\t$0",
+            "end"
+        ]
+    },
+
+    "function": {
+        "prefix": "function",
+        "body": [
+            "function automatic ${1:return_value} ${2:name}(${3:port_list});",
+            "\t${0}",
+            "endfunction"
+        ]
+    },
+
+    "task": {
+        "prefix": "task",
+        "body": [
+            "task ${1:name}(${2:port_list});",
+            "\t${0}",
+            "endtask"
+        ]
+    },
+   
+    "module": {
+        "prefix": "module",
+        "body": [
+            "module ${1:name} #(",
+            "\t${2:parameters}",
+            ")",
+            "(",
+            "\t${3:port_list}",
+            ");",
+            "\t${0}",
+            "endmodule"
+        ]
+    },
+
+    "assert": {
+        "prefix": "assert",
+        "body": [
+            "${1:LABEL}: assert(${2:test}) else \\$fatal(1, \"${0:fatal}\");"
+        ]
+    },
+
+    "generate": {
+        "prefix": "generate",
+        "body": [
+            "generate begin: ${1:LABEL}",
+            "\t${0}",
+            "end endgenerate"
+        ]
+    },
+
+    "generate if": {
+        "prefix": "generate if",
+        "body": [
+            "generate if(${1:condition}) begin: ${1:LABEL}",
+            "\t${0}",
+            "end endgenerate"
+        ]
+    },
+
+    "generate for": {
+        "prefix": "generate for",
+        "body": [
+            "generate for(genvar ${1:i}=0; ${1:i}<=${2:MAX}; ${1:i}++) begin: ${3:LABEL}",
+            "\t${0}",
+            "end endgenerate"
+        ]
+    },
+
+    "typedef/struct": {
+        "prefix": "typedef/struct",
+        "body": [
+            "typedef struct packed {",
+            "\t${1}",
+            "} ${0:name};"
+        ]
+    },
+
+    "typedef/enum": {
+        "prefix": "typedef/enum",
+        "body": ["typedef enum { ${1} } ${0:name};"]
+    }
+}
+
