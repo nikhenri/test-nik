@@ -3,7 +3,7 @@
 	"displayName": "Nik Henri",
 	"publisher": "NikHenri",
 	"description": "Nik Henri vscode extension",
-	"version": "2.0.11",
+	"version": "3.0.0",
 	"engines": {
 		"vscode": "^1.56.0"
 	},
@@ -32,11 +32,11 @@
 			}
 		],
 		"snippets": [
-            {
-                "language": "systemverilog",
-                "path": "./syntaxes/snippets.json"
-            }
-        ],
+			{
+				"language": "systemverilog",
+				"path": "./syntaxes/snippets.json"
+			}
+		],
 		"grammars": [
 			{
 				"language": "systemverilog",
