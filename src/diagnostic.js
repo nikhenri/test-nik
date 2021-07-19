@@ -60,8 +60,7 @@ function getCompilationCommand (fileNameWithoutExt, directory) {
 // get the string in order of the file that need to be compiled (pkg first)
 function getCompilationFileList(fileNameWithoutExt, directory) {
     let tempFilePath = getTempFilePath(fileNameWithoutExt, directory)
-    let importNameList = utils.getImportNameListRecursive(fileNameWithoutExt)
-    importNameList.reverse()
+    let importNameList = utils.getImportNameListInOrder(fileNameWithoutExt)
     let fileStr = ""
     for (let fileNameWithoutExtList of importNameList)
         fileStr += utils.getFilePath(fileNameWithoutExtList) + " "

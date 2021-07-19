@@ -41,7 +41,12 @@ function getFilePath(fileNameWithoutExt) {
 	if(!filePath) ouputChannel.log(`Was not able to found '${fileNameWithoutExt}'`)
 	return filePath
 }
-
+// let a = ['aaa/nnn', 'ccc/bbb']
+// let b = a.reduce((result, item, index) => {
+//   result[item.substring(4)] = item
+//   return result
+// }, {})
+// console.log(b)
 //----------------------------------------------------------------------------
 // Get the text comment removed in a file, based on the fileNameWithoutExt
 // This function will save the text in memory
@@ -96,18 +101,22 @@ function getImportNameList(fileNameWithoutExt) {
 	return matchAll
 }
 //----------------------------------------------------------------------------
+function getImportNameListInOrder(fileNameWithoutExt) {
+	let importNameListRecursive = getImportNameListRecursive(fileNameWithoutExt)
+	let importNameListInOrder = []
+	for (let importName of importNameListRecursive.reverse()) {
+		if(!importNameListInOrder.includes(importName))
+			importNameListInOrder.push(importName)
+	}
+	return importNameListInOrder
+}
+//----------------------------------------------------------------------------
 function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 	// console.log(`Inspecting ${fileNameWithoutExt}`)
 	let importListOfFile = getImportNameList(fileNameWithoutExt)
 	for (let importName of importListOfFile) {
-		let index = importList.findIndex(x => x == importName)
 		importList.push(importName) // add to the end
-		if(index == -1) { // if we have not scanned this yet
-			importList = getImportNameListRecursive(importName, importList)
-		} else {
-			// console.log(`Skip ${importName}`)
-			importList.splice(index, 1) //remove duplicate
-		}
+		importList = getImportNameListRecursive(importName, importList)
 	}
 	return importList
 }
@@ -204,7 +213,7 @@ module.exports = {
 	wordIsReserved,
 	getMatchInFileOrImport,
 	getMatchInAllFile,
-	getImportNameListRecursive,
+	getImportNameListInOrder,
 }
 
 //----------------------------------------------------------------------------
