@@ -29,12 +29,18 @@
     },
     {
       "match": "\\b(get_randstate|set_randstate)\\b",
-      "name": "support.function.systemverilog"
+      "name": "support.numeric.systemverilog"
     },
     {
       "match": "\\b(null|void)\\b",
       "name": "support.constant.systemverilog"
     },
+    {
+      "match": "\\b[A-Z]+[A-Z0-9_]*\\b",
+      "name": "markup.italic.systemverilog"
+    },
+
+
     {
       "captures": {
         "1": {
@@ -86,21 +92,26 @@
       "include": "#all-types"
     },
     {
-      "match": "(==|===|!=|!==|<=|>=|<|>)",
-      "name": "keyword.operator.comparison.systemverilog"
+      "match": "(=|!=|<|>|@|#)",
+      "name": "support.function.systemverilog"
     },
     {
       "match": "(\\-|\\+|\\*|\\/|%)",
-      "name": "keyword.operator.arithmetic.systemverilog"
+      "name": "support.function.systemverilog"
     },
     {
       "match": "(!|&&|\\|\\||\\bor\\b)",
-      "name": "keyword.operator.logical.systemverilog"
+      "name": "support.function.systemverilog"
     },
     {
-      "match": "(&|\\||\\^|~|{|}|<<|>>|\\?|:)",
-      "name": "keyword.operator.bitwise.systemverilog"
+      "match": "(&|\\||\\^|~|\\?)",
+      "name": "support.function.systemverilog"
     },
+    {
+      "match": "({|}|:|;|,)",
+      "name": "support.function.systemverilog"
+    },
+
     {
       "match": "'\\s*\\(.+\\)",
       "name": "keyword.operator.staticcasting.systemverilog"
