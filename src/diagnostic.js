@@ -112,7 +112,7 @@ function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
 
     } catch (error) {
         ouputChannel.log(`CRASH: ${error}`)
-        msg = error
+        msg = stdout
         line = 0
     }
     return {line, msg}
@@ -121,6 +121,8 @@ function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
 // ** Error: C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(478): (vlog-2730) Undefined variable: 'vg_Read_Datas'.
 // ** Error: (vlog-13069) C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(32): near "input": syntax error, unexpected input, expecting ')'.
 // ** Error (suppressible): C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(226): (vlog-2623) Undefined variable: i_cfg_axi_aclk_p.
+// ** Error: ** while parsing file included at C:/Users/nhenri/AppData/Local/Temp/work_V9UoIP/tcp_dma_tb.sv(2)
+//    ** at c:/Users/nhenri/Desktop/tcp_ip_ip__IISTDE-377_txDataOutMux/src/verif/tb/include_list.h(2): (vlib-13006) Could not find the package (uvm_pkg).  Design read will continue, but expect a cascade of errors after this failure.  Furthermore if you experience a vopt-7 error immediately before this error then please check the package names or the library search paths on the command line.
 function getFirstErrorInfo(text) {
     let matchAll = Array.from(text.matchAll(/\*\* Error.*?:.*? ([^(]*)\((\d+)\): (?:\(.*?\) )?(.*)/g))
     let fileNameWithoutExt = utils.filePathToFileNameWithoutExt(matchAll[0][1])

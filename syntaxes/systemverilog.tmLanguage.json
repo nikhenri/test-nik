@@ -12,34 +12,23 @@
       "name": "keyword.other.systemverilog"
     },
     {
-      "match": "\\b(#|@|begin|end|fork|join|join_any|join_none|forkjoin|{|})\\b",
+      "match": "\\b(#|@|begin|end|fork|join|join_any|join_none|forkjoin)\\b",
       "name": "keyword.other.systemverilog"
     },
     {
       "match": "\\b(initial|always|wait|force|release|assign|always_comb|always_ff|always_latch|forever|repeat|while|for|if|iff|else|case|casex|casez|default|endcase|return|break|continue|do|foreach|randomize|with|inside|dist|clocking|cover|coverpoint|property|bins|binsof|illegal_bins|ignore_bins|randcase|modport|matches|solve|static|assert|assume|before|expect|bind|extends|sequence|var|cross|ref|first_match|srandom|time|struct|packed|final|chandle|alias|tagged|extern|throughout|timeprecision|timeunit|priority|type|union|unique|uwire|wait_order|triggered|randsequence|import|export|context|pure|intersect|wildcard|within|virtual|local|const|typedef|enum|protected|this|super|endmodule|endfunction|endprimitive|endclass|endpackage|endsequence|endprogram|endclocking|endproperty|endgroup|endinterface)\\b",
       "name": "keyword.control.systemverilog"
     },
-    {
-      "match": "\\b(std)\\b::",
-      "name": "support.class.systemverilog"
-    },
-    {
-      "match": "\\.(atob|atohex|atoi|atooct|atoreal|bintoa|hextoa|itoa|octtoa|realtoa|len|getc|putc|toupper|tolower|compare|icompare|substr|num|exists|first|last|name|index|find|find_first|find_last|find_index|find_first_index|find_last_index|min|max|unique|unique_index|sort|rsort|shuffle|reverse|sum|product|xor|status|kill|self|await|suspend|resume|get|put|peek|try_get|try_peek|try_put|data|eq|neq|next|prev|new|size|delete|empty|pop_front|pop_back|front|back|insert|insert_range|erase|erase_range|set|swap|clear|purge|start|finish)\\b",
-      "name": "support.function.systemverilog"
-    },
-    {
-      "match": "\\b(get_randstate|set_randstate)\\b",
-      "name": "support.numeric.systemverilog"
-    },
-    {
-      "match": "\\b(null|void)\\b",
-      "name": "support.constant.systemverilog"
-    },
+
     {
       "match": "\\b[A-Z]+[A-Z0-9_]*\\b",
       "name": "markup.italic.systemverilog"
     },
 
+    {
+      "match": "^[ ]*\\.\\w+\\b",
+      "name": "variable.parameter.systemverilog"
+    },
 
     {
       "captures": {
@@ -50,7 +39,7 @@
           "name": "entity.name.type.include.systemverilog"
         }
       },
-      "match": "^\\s*(`include)\\s+([\"<].*[\">])",
+      "match": "^\\s*(`include)\\s*([\"<].*[\">])",
       "name": "meta.include.systemverilog"
     },
     {
@@ -113,7 +102,7 @@
     },
 
     {
-      "match": "'\\s*\\(.+\\)",
+      "match": "'\\s*\\(",
       "name": "keyword.operator.staticcasting.systemverilog"
     },
     {
@@ -143,6 +132,10 @@
     },
     {
       "match": "(\\b\\d+)?'[sS]?([bB]\\s*[0-1_xXzZ?]+|[oO]\\s*[0-7_xXzZ?]+|[dD]\\s*[0-9_xXzZ?]+|[hH]\\s*[0-9a-fA-F_xXzZ?]+|[0-1xXzZ])((e|E)(\\+|-)?[0-9]+)?(?!(\\w|\\?))",
+      "name": "constant.numeric.systemverilog"
+    },
+    {
+      "match": "\\b\\d+\\b",
       "name": "constant.numeric.systemverilog"
     },
     {
