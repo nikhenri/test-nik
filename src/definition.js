@@ -43,27 +43,37 @@ function searchLocation(document, position) {
 		location = getLocation(fileNameWithoutExt, (text) => getTypedefDeclarationMatch(text, word))
 		if(location) return location
 	}
+
 	// Module decalaration ?
 	if(isModuleDeclaration(lineOfWordAndTextAfter, word)) { // module ipv4 #(
 		ouputChannel.log(`Searching instance: ${word}`)
 		location = getLocation(null, (text) => getModuleInstanceMatch(text, word))
 		if(location) return location
 	}
+
+	// Module decalaration ?
+	if(isModulePort(lineOfWordAndTextAfter, word)) { // input logic i_clock_p,
+		ouputChannel.log(`Searching pin: ${word}`)
+		location = getLocation(null, (text) => getPinInstanceMatch(text, word, fileNameWithoutExt))
+		if(location) return location
+	}
+
 	// Import ?
 	if (isImport(lineOfWordAndTextAfter, word)) { // import pkg::*;
 		ouputChannel.log(`Searching package: ${word}`)
 		location = getLocation(word, (text) => getPackageMatch(text))
 		if(location) return location
 	}
-	// port ?
+
+	// Pin ?
 	let wordWithLinePrefix = document.lineAt(position).text.substr(0, document.getWordRangeAtPosition(position).end.character)
-	if (isPort(wordWithLinePrefix, word)) { // .toto (),
+	if (isInstancePin(wordWithLinePrefix, word)) { // .toto (),
 		ouputChannel.log(`Searching port: ${word}`)
-		let text = (utils.getFileText(fileNameWithoutExt)).text
-		let instanceName = getInstanceAtLine(text, position.line)
+		let instanceName = getInstanceAtLine(fileNameWithoutExt, position.line)
 		location = getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
 		if(location) return location
 	}
+
 	// Function ?
 	let wordWithLineSuffix = document.lineAt(position).text.substr(document.getWordRangeAtPosition(position).start.character)
 	if(isFunction(wordWithLineSuffix, word)) { // something(arg)
@@ -146,6 +156,24 @@ function getModuleInstanceMatch(text, name) {
 }
 
 //----------------------------------------------------------------------------
+function isModulePort(text, name) {
+	return text.match(new RegExp(`^\\s*(input|output|inout|parameter)\\s+\\w+.*\\b${name}\\b`))
+}
+
+//----------------------------------------------------------------------------
+function getPinInstanceMatch(text, name, fileNameWithoutExt) {
+	// get the Instance Match
+	let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*\\b${fileNameWithoutExt}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
+	if(matchAll.length) {
+		for (let match of matchAll) { // find the pin (.name) in the match and add the offset to overall match
+			let matchPin = Array.from(match[0].matchAll(new RegExp(`^[ ]*\\.${name}\\b`, "gm")))
+			if(matchPin.length)	match.index += matchPin[0].index // might be possible the pin is not connected
+		}
+	}
+	return matchAll
+}
+
+//----------------------------------------------------------------------------
 function isImport(text, name) {
 	return text.match(new RegExp(`^[ ]*import\\s*(?:.*\\s*,\\s*)*\\b${name}\\b::`))
 }
@@ -156,7 +184,7 @@ function getPackageMatch(text) {
 }
 
 //----------------------------------------------------------------------------
-function isPort(text, name) {
+function isInstancePin(text, name) {
 	return text.match(new RegExp(`^[ ]*\\.\\s*${name}\\b$`))
 }
 
@@ -183,7 +211,8 @@ function getWordFirstOccuranceMatch(text, name) {
 }
 
 //----------------------------------------------------------------------------
-function getInstanceAtLine(text, line) {
+function getInstanceAtLine(fileNameWithoutExt, line) {
+	let text = (utils.getFileText(fileNameWithoutExt)).text
 	let allInstanceName = getInstanceMatch(text)
 	let instanceName
 	for (let inst of allInstanceName) {
