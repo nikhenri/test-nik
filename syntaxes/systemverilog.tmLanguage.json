@@ -26,7 +26,7 @@
     },
 
     {
-      "match": "^[ ]*\\.\\w+\\b",
+      "match": "^[ ]*\\.\\s*\\w+\\b",
       "name": "variable.parameter.systemverilog"
     },
 
