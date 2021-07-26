@@ -157,7 +157,7 @@ function getModuleInstanceMatch(text, name) {
 
 //----------------------------------------------------------------------------
 function isModulePort(text, name) {
-	return text.match(new RegExp(`^\\s*(input|output|inout|parameter)\\s+\\w+.*\\b${name}\\b`))
+	return text.match(new RegExp(`^\\s*(?:input|output|inout|parameter)\\s+.*\\b${name}\\b`))
 }
 
 //----------------------------------------------------------------------------
