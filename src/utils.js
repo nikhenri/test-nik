@@ -38,7 +38,11 @@ function getFilePath(fileNameWithoutExt) {
 			filePath = getFilePath.listOfPath
 		ouputChannel.log("Update done")
 	}
-	if(!filePath) ouputChannel.log(`Was not able to found '${fileNameWithoutExt}'`)
+	if(!filePath) {
+		let str = `Was not able to found file '${fileNameWithoutExt}.{v|sv}'`
+		ouputChannel.log(str)
+		vscode.window.showErrorMessage(str)
+	}
 	return filePath
 }
 // let a = ['aaa/nnn', 'ccc/bbb']
