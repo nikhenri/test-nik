@@ -163,7 +163,7 @@ function isModulePort(text, name) {
 //----------------------------------------------------------------------------
 function getPinInstanceMatch(text, name, fileNameWithoutExt) {
 	// get the Instance Match
-	let matchAll = Array.from(text.matchAll(new RegExp(`^[ ]*\\b${fileNameWithoutExt}\\b\\s*(?:#\\s*\\([\\s\\S]*?\\)\\s*)?\\w+\\s*\\([\\s\\S]+?\\)\\s*;`, "gm")))
+	let matchAll = getModuleInstanceMatch(text, fileNameWithoutExt)
 	if(matchAll.length) {
 		for (let match of matchAll) { // find the pin (.name) in the match and add the offset to overall match
 			let matchPin = Array.from(match[0].matchAll(new RegExp(`^[ ]*\\.${name}\\b`, "gm")))
