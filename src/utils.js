@@ -19,6 +19,13 @@ function replaceCommentWithSpace(text) {
 }
 
 //----------------------------------------------------------------------------
+// Remove all comment
+function removeComment(text) {
+	let textWithoutComment = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+	return textWithoutComment
+}
+
+//----------------------------------------------------------------------------
 // Will search all file that have the name 'fileNameWithoutExt' with extension .sv or .v
 // Ex: toto => return C:/something/toto.sv
 // If 'fileNameWithoutExt' is false, will return a list of all the file with extension .sv or .v
@@ -208,6 +215,7 @@ function getMatchInImport(fileNameWithoutExt, funcMatch) {
 //----------------------------------------------------------------------------
 module.exports = {
     replaceCommentWithSpace,
+	removeComment,
     getFilePath,
     getFileText,
 	uriToFileNameWithoutExt,
