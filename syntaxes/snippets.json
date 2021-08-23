@@ -9,7 +9,7 @@
     },
 
     "always_ff sync reset": {
-        "prefix": "always_ff sync reset",
+        "prefix": "always_ff",
         "body": [
             "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
             "\tif(${3:i_reset_p}) begin",
@@ -22,7 +22,7 @@
     },
 
     "always_comb": {
-        "prefix": "always_comb ",
+        "prefix": "always_comb",
         "body": [
             "always_comb begin: ${1:LABEL}",
             "\t${0}",
@@ -40,7 +40,7 @@
     },
 
     "if/else": {
-        "prefix": "if/else",
+        "prefix": "if",
         "body": [
             "if(${1:condition}) begin: ${2:LABEL}",
             "\t${3}",
@@ -51,7 +51,7 @@
     },
 
     "if/else if/else": {
-        "prefix": "if/else if/else",
+        "prefix": "if",
         "body": [
             "if(${1:condition}) begin: ${2:LABEL}",
             "\t${3}",
@@ -64,7 +64,7 @@
     },
 
     "case/default": {
-        "prefix": "case/default",
+        "prefix": "case",
         "body": [
             "case (${1:variable})",
             "\t${2:condition}: begin: ${3:LABEL}",
@@ -128,8 +128,8 @@
         ]
     },
 
-    "assert": {
-        "prefix": "assert fatal",
+    "assert fatal": {
+        "prefix": "assert",
         "body": [
             "${1:LABEL}: assert(${2:test}) else \\$fatal(1, \"${0:fatal}\");"
         ]
@@ -154,7 +154,7 @@
     },
 
     "generate for": {
-        "prefix": "generate for",
+        "prefix": "generate",
         "body": [
             "generate for(genvar ${1:i}=0; ${1:i}<=${2:MAX}; ${1:i}++) begin: ${3:LABEL}",
             "\t${0}",
@@ -163,7 +163,7 @@
     },
 
     "typedef/struct": {
-        "prefix": "typedef/struct",
+        "prefix": "typedef struct",
         "body": [
             "typedef struct packed {",
             "\t${0}",
@@ -172,7 +172,7 @@
     },
 
     "typedef/enum": {
-        "prefix": "typedef/enum",
+        "prefix": "typedef enum",
         "body": ["typedef enum { ${0} } ${1:name};"]
     }
 }
