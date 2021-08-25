@@ -145,7 +145,7 @@
     },
 
     "generate if": {
-        "prefix": "generate if",
+        "prefix": "generate",
         "body": [
             "generate if(${1:condition}) begin: ${1:LABEL}",
             "\t${0}",
