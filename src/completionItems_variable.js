@@ -68,18 +68,19 @@ function getAllPortLabelDescFromEntity(text) {
 // bit                    a [1:0];
 // bit [$clog2(SIZE)-1:0] a [1:0];
 // bit [$clog2(SIZE)-1:0] a, b;
-// bit [$clog2(SIZE)-1:0] a = 0, b;
-// bit [$clog2(SIZE)-1:0] a = 0,
+// bit [$clog2(SIZE)-1:0] a = 0, b; [UNSUPPORTED]
+// bit [$clog2(SIZE)-1:0] a = 0;
 // bit [$clog2(SIZE)-1:0][3:0] a [1:0];
 // bit [$clog2(SIZE)-1:0] [3:0] a [1:0];
-//                        b, c [1:0];
+// bit [$clog2(SIZE)-1:0] [3:0] a [1:0][3:0];
 // type(woof)  b;
 function getAllSignalLabelDescFromArchitecture(text) {
-	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(type\b.*?\)|\w+)[ ]*([ ]*\[.*\][ ]*)*[ ]+([ ]*\w+\s*(\[.*?\])*(?:=.*?)?(,*)\s*?)+;/gm))
+	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^\s*(type\b.*?\)|\w+)\s*(\s*\[.*\]\s*)*\s+(\w.*?)(\[.*\])*(?:=.*?)?;/gm))
 	let nameDescArray = []
 	for (let variableLineDeclaration of matchAllvariableLineDeclaration) { //extract all variable separate by ,
 		let type = variableLineDeclaration[1]
 		let urange = variableLineDeclaration[2]
+		let names = variableLineDeclaration[3]
 		let prange = variableLineDeclaration[4]
 
 		let description = type
@@ -88,7 +89,7 @@ function getAllSignalLabelDescFromArchitecture(text) {
 		if(prange)
 			description += ` x ${prange.replace(/\s+/, '')}`
 
-		let allVariableNameInLine = Array.from(variableLineDeclaration[0].matchAll(/(\w+)\s*(?:=.*?)?\s*(?:,|;)/g)).map(x=>x[1])
+		let allVariableNameInLine = names.split(',').map(x=>x.trim())
 		for (let name of allVariableNameInLine) {
 			nameDescArray.push({label:name, description:description})
 		}
