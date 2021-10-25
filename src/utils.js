@@ -109,7 +109,7 @@ function getImportNameList(fileNameWithoutExt) {
 	if (matchAll.length) {
 		return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
 	}
-	return matchAll
+	return []
 }
 //----------------------------------------------------------------------------
 function getImportNameListInOrder(fileNameWithoutExt) {

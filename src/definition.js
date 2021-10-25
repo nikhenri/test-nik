@@ -171,7 +171,7 @@ function getPinInstanceMatch(text, name, fileNameWithoutExt) {
 			if(matchPin.length)	match.index += matchPin[0].index // might be possible the pin is not connected
 		}
 	}
-	return matchAll
+	return []
 }
 
 //----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ function getWordOccuranceMatch(text, name) {
 function getWordFirstOccuranceMatch(text, name) {
     let match = getWordOccuranceMatch(text, name)
     if (match.length) return [match[0]] //only the first one
-    return match
+    return []
 }
 
 //----------------------------------------------------------------------------

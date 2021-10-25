@@ -64,9 +64,10 @@ function searchStructInText(text, structTypeName){
 
 //----------------------------------------------------------------------------
 function getStructMemberList(str){
-    let matchAll = Array.from(str.matchAll(/(\w+)\s*;/g))
-    if (matchAll.length) return matchAll.map(x => x[1]).slice(0, -1) // throw last match (-1), it is the name
-	return matchAll
+    let matchAll = Array.from(str.matchAll(/(.*?)(\w+)\s*;/g))
+    if (matchAll.length)
+		return matchAll.map(x => {return {label:x[2], description:x[1].trim().replace(/\s+/, ' ')}}).slice(0, -1) // throw last match (-1), it is the name
+	return []
 }
 
 //----------------------------------------------------------------------------
