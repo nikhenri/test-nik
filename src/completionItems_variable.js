@@ -6,16 +6,18 @@ const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-function provideCompletionItems(document, position){
+function provideCompletionItems(document){
 	let documentWithoutComment = utils.removeComment(document.getText())
 	let entityAndArchObj = getEntityAndArch(documentWithoutComment)
 	if(!entityAndArchObj) return
 
-	let allPortName = getAllPortNameFromEntity(entityAndArchObj.entity)
-	let allSignalName = getAllSignalNameFromArchitecture(entityAndArchObj.architecture)
+	let completionArray = []
+	// for (let nameDesc of getAllPortLabelDescFromEntity(entityAndArchObj.entity))
+	// 	completionArray.push(new vscode.CompletionItem({label:nameDesc.name, description: nameDesc.description}, vscode.CompletionItemKind.Class))
 
-	let completionArray =[...allPortName.map(x=>new vscode.CompletionItem(x, vscode.CompletionItemKind.Class)),
-		                  ...allSignalName.map(x=>new vscode.CompletionItem(x, vscode.CompletionItemKind.Variable))]
+	for (let nameDesc of getAllSignalNameDescFromArchitecture(entityAndArchObj.architecture))
+		completionArray.push(new vscode.CompletionItem({label:nameDesc.name, description: nameDesc.description}, vscode.CompletionItemKind.Variable))
+
 	return completionArray
 }
 
@@ -32,29 +34,66 @@ function getEntityAndArch(text) {
 // input  a,
 // input  logic a,
 // input  logic [16:0] a,
+// input  logic [16:0][5:0] a,
 // input  logic [16:0] a [1:0],
 // input  logic a [1:0],
 // input  logic a = 0,
-function getAllPortNameFromEntity(text) {
-	return Array.from(text.matchAll(/^\s*(?:parameter|input|output|inout)\s+\w*?\s*(?:\[.*?\]\s*)*(\w+)\s*(?:\[.*?\]\s*)*(?:=.*)?(?:,|\s*\))/gm)).map(x=>x[1])
+function getAllPortNameDescFromEntity(text) {
+	let matchAll = Array.from(text.matchAll(/^\s*(parameter|input|output|inout)\s+(\w*\s+)*\s*(\[.*\]\s*?)*\s*(\w+)\s*(\[.*\]\s*?)*\s*(?:=.*)?(?:,|\s*\))/gm))
+
+	let nameDescArray = []
+	for (let match of matchAll) { //extract all variable separate by ,
+		let kind = match[1]
+		let type = match[2]
+		let urange = match[3]
+		let name = match[4]
+		let prange = match[5]
+
+		let description = kind
+		if(type)
+			description += ` ${type.trim()}`
+		if(urange)
+			description += ` ${urange.replace(/\s+/, '')}`
+		if(prange)
+			description += ` x ${prange.replace(/\s+/, '')}`
+			nameDescArray.push({name, description})
+	}
+	return nameDescArray
 }
 
 //----------------------------------------------------------------------------
 // extract all line of declaration, then get all varialbe in the name (,)
-//ex: bit                    a;
-//ex: bit                    a = 0;
-//ex: bit                    a [1:0];
-//ex: bit [$clog2(SIZE)-1:0] a [1:0];
-//ex: bit [$clog2(SIZE)-1:0] a, b;
-//ex: bit [$clog2(SIZE)-1:0] a = 0, b;
-function getAllSignalNameFromArchitecture(text) {
-	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(?:type\b.*?\)|\w+)(?:\s*\[.*?\]\s*)*[ ]+(?:\s*\w+\s*(?:=.*?)?(?:,|;)\s*?)+/gm))
-	let allSignalNameFromArchitecture = []
+// bit                    a;
+// bit                    a = 0;
+// bit                    a [1:0];
+// bit [$clog2(SIZE)-1:0] a [1:0];
+// bit [$clog2(SIZE)-1:0] a, b;
+// bit [$clog2(SIZE)-1:0] a = 0, b;
+// bit [$clog2(SIZE)-1:0] a = 0,
+// bit [$clog2(SIZE)-1:0][3:0] a [1:0];
+// bit [$clog2(SIZE)-1:0] [3:0] a [1:0];
+//                        b, c [1:0];
+// type(woof)  b;
+function getAllSignalNameDescFromArchitecture(text) {
+	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(type\b.*?\)|\w+)[ ]*([ ]*\[.*\][ ]*)*[ ]+([ ]*\w+\s*(\[.*?\])*(?:=.*?)?(,*)\s*?)+;/gm))
+	let nameDescArray = []
 	for (let variableLineDeclaration of matchAllvariableLineDeclaration) { //extract all variable separate by ,
+		let type = variableLineDeclaration[1]
+		let urange = variableLineDeclaration[2]
+		let prange = variableLineDeclaration[4]
+
+		let description = type
+		if(urange)
+			description += ` ${urange.replace(/\s+/, '')}`
+		if(prange)
+			description += ` x ${prange.replace(/\s+/, '')}`
+
 		let allVariableNameInLine = Array.from(variableLineDeclaration[0].matchAll(/(\w+)\s*(?:=.*?)?\s*(?:,|;)/g)).map(x=>x[1])
-		allSignalNameFromArchitecture.push(...allVariableNameInLine)
+		for (let name of allVariableNameInLine) {
+			nameDescArray.push({name:name, description:description})
+		}
 	}
-	return allSignalNameFromArchitecture
+	return nameDescArray
 }
 
 //----------------------------------------------------------------------------
