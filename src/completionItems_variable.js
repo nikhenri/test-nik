@@ -12,11 +12,11 @@ function provideCompletionItems(document){
 	if(!entityAndArchObj) return
 
 	let completionArray = []
-	// for (let nameDesc of getAllPortLabelDescFromEntity(entityAndArchObj.entity))
-	// 	completionArray.push(new vscode.CompletionItem({label:nameDesc.name, description: nameDesc.description}, vscode.CompletionItemKind.Class))
+	for (let labelDescObj of getAllPortLabelDescFromEntity(entityAndArchObj.entity))
+		completionArray.push(new vscode.CompletionItem(labelDescObj, vscode.CompletionItemKind.Class))
 
-	for (let nameDesc of getAllSignalNameDescFromArchitecture(entityAndArchObj.architecture))
-		completionArray.push(new vscode.CompletionItem({label:nameDesc.name, description: nameDesc.description}, vscode.CompletionItemKind.Variable))
+	for (let labelDescObj of getAllSignalLabelDescFromArchitecture(entityAndArchObj.architecture))
+		completionArray.push(new vscode.CompletionItem(labelDescObj, vscode.CompletionItemKind.Variable))
 
 	return completionArray
 }
@@ -38,7 +38,7 @@ function getEntityAndArch(text) {
 // input  logic [16:0] a [1:0],
 // input  logic a [1:0],
 // input  logic a = 0,
-function getAllPortNameDescFromEntity(text) {
+function getAllPortLabelDescFromEntity(text) {
 	let matchAll = Array.from(text.matchAll(/^\s*(parameter|input|output|inout)\s+(\w*\s+)*\s*(\[.*\]\s*?)*\s*(\w+)\s*(\[.*\]\s*?)*\s*(?:=.*)?(?:,|\s*\))/gm))
 
 	let nameDescArray = []
@@ -56,7 +56,7 @@ function getAllPortNameDescFromEntity(text) {
 			description += ` ${urange.replace(/\s+/, '')}`
 		if(prange)
 			description += ` x ${prange.replace(/\s+/, '')}`
-			nameDescArray.push({name, description})
+			nameDescArray.push({label:name, description})
 	}
 	return nameDescArray
 }
@@ -74,7 +74,7 @@ function getAllPortNameDescFromEntity(text) {
 // bit [$clog2(SIZE)-1:0] [3:0] a [1:0];
 //                        b, c [1:0];
 // type(woof)  b;
-function getAllSignalNameDescFromArchitecture(text) {
+function getAllSignalLabelDescFromArchitecture(text) {
 	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(type\b.*?\)|\w+)[ ]*([ ]*\[.*\][ ]*)*[ ]+([ ]*\w+\s*(\[.*?\])*(?:=.*?)?(,*)\s*?)+;/gm))
 	let nameDescArray = []
 	for (let variableLineDeclaration of matchAllvariableLineDeclaration) { //extract all variable separate by ,
@@ -90,7 +90,7 @@ function getAllSignalNameDescFromArchitecture(text) {
 
 		let allVariableNameInLine = Array.from(variableLineDeclaration[0].matchAll(/(\w+)\s*(?:=.*?)?\s*(?:,|;)/g)).map(x=>x[1])
 		for (let name of allVariableNameInLine) {
-			nameDescArray.push({name:name, description:description})
+			nameDescArray.push({label:name, description:description})
 		}
 	}
 	return nameDescArray
