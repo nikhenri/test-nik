@@ -20,46 +20,48 @@ const tempDir = os.tmpdir().replace(/\\/g,"/")
 // Extract info from cmd stdout
 // Add error wave
 function updateDiagnostic() {
-    if(path.parse(vscode.window.activeTextEditor.document.uri.fsPath).ext == ".svh") return
+    let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
+    if(path.parse(uri.fsPath).ext == ".svh") return
 
     ouputChannel.log("Diagnostic")
     utils.getFileText() // init
-    let fileNameWithoutExt = utils.uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri)
+    let fileNameWithoutExt = utils.uriToFileNameWithoutExt(uri)
+    let fileNameExt = path.parse(uri.fsPath).ext
 
     fs.mkdtemp(tempDir + '/work_', (err, directory) => {
-        saveCurrentTextToTemporayFile(fileNameWithoutExt, directory)
-        let cmdStr = getCompilationCommand(fileNameWithoutExt, directory)
-        child_process.exec(cmdStr, (error, stdout) => {compilationCommandCallback(fileNameWithoutExt, directory, error, stdout)})
+        saveCurrentTextToTemporayFile(fileNameWithoutExt, fileNameExt, directory)
+        let cmdStr = getCompilationCommand(fileNameWithoutExt, fileNameExt, directory, uri)
+        child_process.exec(cmdStr, (error, stdout) => {compilationCommandCallback(uri, fileNameWithoutExt, directory, error, stdout)})
     })
 }
 
 //----------------------------------------------------------------------------
 // save the current live text in order to compile it
-function saveCurrentTextToTemporayFile(fileNameWithoutExt, directory) {
-    let tempFilePath = getTempFilePath(fileNameWithoutExt, directory)
+function saveCurrentTextToTemporayFile(fileNameWithoutExt, fileNameExt, directory) {
+    let tempFilePath = getTempFilePath(fileNameWithoutExt, fileNameExt, directory)
     let text = utils.getFileText(fileNameWithoutExt).text
     fs.writeFileSync(tempFilePath, text)
 }
 
 //----------------------------------------------------------------------------
-function getTempFilePath (fileNameWithoutExt, directory) {
-    return directory + `/${fileNameWithoutExt}.sv`
+function getTempFilePath (fileNameWithoutExt, fileNameExt, directory) {
+    return directory + `/${fileNameWithoutExt}${fileNameExt}`
 }
 
 //----------------------------------------------------------------------------
 // get the vlog command to run in order to compile the file with pkg
-function getCompilationCommand (fileNameWithoutExt, directory) {
-    let fileDir = path.dirname(vscode.window.activeTextEditor.document.uri.fsPath).replace(/\\/g,"/")
+function getCompilationCommand (fileNameWithoutExt, fileNameExt, directory, uri) {
+    let fileDir = path.dirname(uri.fsPath).replace(/\\/g,"/")
     let incdirStr = getIncdirStrFromSettings()
-    let fileStr = getCompilationFileList(fileNameWithoutExt, directory)
+    let fileStr = getCompilationFileList(fileNameWithoutExt, fileNameExt, directory)
     let cmdStr = `vlog -quiet -warning error -svinputport=relaxed -lint=default -suppress 2181,7061,2254 -work ${directory} +incdir+${fileDir} ${incdirStr} ${fileStr}`
     ouputChannel.log(cmdStr)
     return cmdStr
 }
 //----------------------------------------------------------------------------
 // get the string in order of the file that need to be compiled (pkg first)
-function getCompilationFileList(fileNameWithoutExt, directory) {
-    let tempFilePath = getTempFilePath(fileNameWithoutExt, directory)
+function getCompilationFileList(fileNameWithoutExt, fileNameExt, directory) {
+    let tempFilePath = getTempFilePath(fileNameWithoutExt, fileNameExt, directory)
     let importNameList = utils.getImportNameListInOrder(fileNameWithoutExt)
     let fileStr = ""
     for (let fileNameWithoutExtList of importNameList)
@@ -85,15 +87,15 @@ function getIncdirStrFromSettings() {
 
 //----------------------------------------------------------------------------
 // The function call after the compilation is done, analyse stdout and add/remove error
-function compilationCommandCallback(fileNameWithoutExt, directory, error, stdout) {
+function compilationCommandCallback(uri, fileNameWithoutExt, directory, error, stdout) {
     fs.rmdir(directory, { recursive: true }, ()=>{})
     if(error) {
         ouputChannel.log(stdout)
         let {line, msg} = getLineAndMsgFromStdout(stdout, fileNameWithoutExt)
-        addErrorOnActiveTextEditor(line, msg)
+        addErrorOnActiveTextEditor(uri, line, msg)
     } else {
         ouputChannel.log("no error!\n")
-        removeErrorOnActiveTextEditor()
+        removeErrorOnActiveTextEditor(uri)
     }
 }
 
@@ -117,6 +119,7 @@ function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
     }
     return {line, msg}
 }
+
 //----------------------------------------------------------------------------
 // ** Error: C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(478): (vlog-2730) Undefined variable: 'vg_Read_Datas'.
 // ** Error: (vlog-13069) C:/Users/nhenri/AppData/Local/Temp/tcp_regs.sv(32): near "input": syntax error, unexpected input, expecting ')'.
@@ -141,8 +144,8 @@ function getImportLine(fileNameWithoutExt, importName) {
 }
 //----------------------------------------------------------------------------
 // add error wave to text
-function addErrorOnActiveTextEditor (line, msg) {
-    collection.set(vscode.window.activeTextEditor.document.uri, [new vscode.Diagnostic(
+function addErrorOnActiveTextEditor (uri, line, msg) {
+    collection.set(uri, [new vscode.Diagnostic(
         new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, 999)),
         msg,
         vscode.DiagnosticSeverity.Error
@@ -151,8 +154,8 @@ function addErrorOnActiveTextEditor (line, msg) {
 
 //----------------------------------------------------------------------------
 // add error wave to text
-function removeErrorOnActiveTextEditor () {
-    collection.delete(vscode.window.activeTextEditor.document.uri)
+function removeErrorOnActiveTextEditor (uri) {
+    collection.delete(uri)
 }
 
 //----------------------------------------------------------------------------
