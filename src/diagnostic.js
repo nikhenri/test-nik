@@ -21,6 +21,7 @@ const tempDir = os.tmpdir().replace(/\\/g,"/")
 // Add error wave
 function updateDiagnostic() {
     let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
+    if(uri.scheme != 'file') return
     if(path.parse(uri.fsPath).ext == ".svh") return
 
     ouputChannel.log("Diagnostic")
