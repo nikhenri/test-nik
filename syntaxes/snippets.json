@@ -3,7 +3,7 @@
         "prefix": "always_ff",
         "body": [
             "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
-            "\t${0}",
+            "\t${TM_SELECTED_TEXT}",
             "end"
         ]
     },
@@ -15,7 +15,7 @@
             "\tif(${3:i_reset_p}) begin",
             "\t\t${5}",
             "\telse",
-            "\t\t${0}",
+            "\t\t${TM_SELECTED_TEXT}",
             "\tend",
             "end"
         ]
@@ -24,8 +24,15 @@
     "always_comb": {
         "prefix": "always_comb",
         "body": [
+            "always_comb ${TM_SELECTED_TEXT}"
+        ]
+    },
+
+    "always_comb begin": {
+        "prefix": "always_comb",
+        "body": [
             "always_comb begin: ${1:LABEL}",
-            "\t${0}",
+            "\t${TM_SELECTED_TEXT}",
             "end"
         ]
     },
@@ -33,8 +40,15 @@
     "if": {
         "prefix": "if",
         "body": [
+            "if(${1:condition}) ${TM_SELECTED_TEXT}"
+        ]
+    },
+
+    "if begin": {
+        "prefix": "if",
+        "body": [
             "if(${1:condition}) begin: ${2:LABEL}",
-            "\t${3}",
+            "\t${TM_SELECTED_TEXT}",
             "end"
         ]
     },
@@ -43,7 +57,7 @@
         "prefix": "if",
         "body": [
             "if(${1:condition}) begin: ${2:LABEL}",
-            "\t${3}",
+            "\t${TM_SELECTED_TEXT}",
             "end else begin: ${4:LABEL}",
             "\t${5}",
             "end"
@@ -54,7 +68,7 @@
         "prefix": "if",
         "body": [
             "if(${1:condition}) begin: ${2:LABEL}",
-            "\t${3}",
+            "\t${TM_SELECTED_TEXT}",
             "end else if begin: ${4:LABEL}",
             "\t${5}",
             "end else begin: ${6:LABEL}",
@@ -82,7 +96,7 @@
         "prefix": "for",
         "body": [
             "for (int ${1:i}=0; ${1:i}<=${2:MAX}; ${1:i}++) begin: ${3:LABEL}",
-            "\t${0}",
+            "\t${TM_SELECTED_TEXT}",
             "end"
         ]
     },
@@ -91,7 +105,7 @@
         "prefix": "foreach",
         "body": [
             "foreach (${1:arr}[${2:i}]) begin: ${3:LABEL}",
-            "\t${0}",
+            "\t${TM_SELECTED_TEXT}",
             "end"
         ]
     },

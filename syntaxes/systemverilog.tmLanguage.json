@@ -65,6 +65,16 @@
       "match": "\\b(function)\\b\\s+(\\[.*\\])?\\s+\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
       "name": "meta.definition.systemverilog"
     },
+
+    {
+      "captures": {
+        "1": {
+          "name": "storage.type.systemverilog"
+        }
+      },
+      "match": "^[ ]*(?!\\bassign\\b|\\balways_comb\\b)(type\\b.*?\\)|\\w+)[ ]*(\\[.*\\])*[ ]+(\\w[a-zA-Z_0-9, ]*)(\\[.*\\])*(?:=.*)?[ ]*;",
+      "name": "meta.definition.systemverilog"
+    },
     {
       "captures": {
         "1": {
