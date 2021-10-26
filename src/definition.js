@@ -51,7 +51,7 @@ function searchLocation(document, position) {
 		if(location) return location
 	}
 
-	// Module decalaration ?
+	// Module port ?
 	if(isModulePort(lineOfWordAndTextAfter, word)) { // input logic i_clock_p,
 		ouputChannel.log(`Searching pin: ${word}`)
 		location = getLocation(null, (text) => getPinInstanceMatch(text, word, fileNameWithoutExt))
@@ -157,7 +157,7 @@ function getModuleInstanceMatch(text, name) {
 
 //----------------------------------------------------------------------------
 function isModulePort(text, name) {
-	return text.match(new RegExp(`^\\s*(?:input|output|inout|parameter)\\s+.*\\b${name}\\b`))
+	return text.match(new RegExp(`^\\s*(?:input|output|inout|parameter)\\s+.*?\\b${name}\\b`))
 }
 
 //----------------------------------------------------------------------------
@@ -170,6 +170,7 @@ function getPinInstanceMatch(text, name, fileNameWithoutExt) {
 			let matchPin = Array.from(match[0].matchAll(regExp))
 			if(matchPin.length)	match.index += matchPin[0].index // might be possible the pin is not connected
 		}
+		return matchAll
 	}
 	return []
 }
