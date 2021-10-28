@@ -70,15 +70,6 @@
       "captures": {
         "1": {
           "name": "storage.type.systemverilog"
-        }
-      },
-      "match": "^[ ]*(?!\\bassign\\b|\\balways_comb\\b)(type\\b.*?\\)|\\w+)[ ]*(\\[.*\\])*[ ]+(\\w[a-zA-Z_0-9, ]*)(\\[.*\\])*(?:=.*)?[ ]*;",
-      "name": "meta.definition.systemverilog"
-    },
-    {
-      "captures": {
-        "1": {
-          "name": "storage.type.systemverilog"
         },
         "2": {
           "name": "entity.name.type.class.systemverilog"
