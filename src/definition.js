@@ -68,7 +68,7 @@ function searchLocation(document, position) {
 	// Pin ?
 	let wordWithLinePrefix = document.lineAt(position).text.substr(0, document.getWordRangeAtPosition(position).end.character)
 	if (isInstancePin(wordWithLinePrefix, word)) { // .toto (),
-		ouputChannel.log(`Searching port: ${word}`)
+		ouputChannel.log(`Searching instance pin: ${word}`)
 		let instanceName = getInstanceAtLine(fileNameWithoutExt, position.line)
 		location = getLocation(instanceName, (text) => getWordFirstOccuranceMatch(text, word))
 		if(location) return location
