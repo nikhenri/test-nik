@@ -6,8 +6,12 @@ const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-function provideCompletionItems(document){
-	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+function provideCompletionItemsVariable(document){
+	return utils.tryCatch(__provideCompletionItemsVariable, document)
+}
+
+//----------------------------------------------------------------------------
+function __provideCompletionItemsVariable(document){
 	let documentWithoutComment = utils.removeComment(document.getText())
 	let entityAndArchObj = getEntityAndArch(documentWithoutComment)
 	if(!entityAndArchObj) return
@@ -40,24 +44,22 @@ function getEntityAndArch(text) {
 // input  logic a [1:0],
 // input  logic a = 0,
 function getAllPortLabelDescFromEntity(text) {
-	let matchAll = Array.from(text.matchAll(/^\s*(parameter|input|output|inout)\s+(\w*\s+)*\s*(\[.*\]\s*?)*\s*(\w+)\s*(\[.*\]\s*?)*\s*(?:=.*)?(?:,|\s*\))/gm))
+	let matchAll = Array.from(textz.matchAll(/#\(\s*(.*)\)\s*\(\s*(.*)\s*\)\s*;/gms)) // get all parameter and io
+	let parameter_str = matchAll[0][1].replace(/^\s*$/gm, "") //remove empty line
+	let io_str = matchAll[0][2].replace(/^\s*$/gm, "") //remove empty line
+	// create a string with both, add ',' tp make it easier for regexp, remove empty line
+	let parameter_and_io_str = `${parameter_str.trim()},\n${io_str.trim()},`
+	let parameter_and_io_list = parameter_and_io_str.split(/\r?\n/) //split in line
 
 	let nameDescArray = []
-	for (let match of matchAll) { //extract all variable separate by ,
-		let kind = match[1]
-		let type = match[2]
-		let urange = match[3]
-		let name = match[4]
-		let prange = match[5]
+	for (let match of parameter_and_io_list) { //extract all variable separate by ,
+		match = match.replace(/\s+/gm, " ").trim() // remove duplicate space + trim
 
-		let description = kind
-		if(type)
-			description += ` ${type.trim()}`
-		if(urange)
-			description += ` ${urange.replace(/\s+/, '')}`
-		if(prange)
-			description += ` x ${prange.replace(/\s+/, '')}`
-			nameDescArray.push({label:name, description})
+		let description = match.replace(/\s*(=.*)?,/gm, "") // remove = and ,
+		let not_bracket = description.replace(/\[.*?\]/gm, "") // remove []
+		matchAll = Array.from(not_bracket.matchAll(/(\w+)\s*$/gm))
+		let name = matchAll[0][1]
+		nameDescArray.push({label:name, description})
 	}
 	return nameDescArray
 }
@@ -100,7 +102,7 @@ function getAllSignalLabelDescFromArchitecture(text) {
 
 //----------------------------------------------------------------------------
 module.exports = {
-	provideCompletionItems,
+	provideCompletionItemsVariable,
 }
 
 //----------------------------------------------------------------------------

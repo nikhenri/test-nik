@@ -3,8 +3,22 @@
 //----------------------------------------------------------------------------
 const vscode = require('vscode')
 const ouputChannel = require('./ouputChannel')
+const utils = require('./utils')
 
 const DollarCompletionList = getDollarCompletionList()
+
+//----------------------------------------------------------------------------
+function provideCompletionItemsDollar(document, position){
+	return utils.tryCatch(__provideCompletionItemsDollar, document, position)
+}
+
+//----------------------------------------------------------------------------
+function __provideCompletionItemsDollar(document, position){
+	let linePrefix = document.lineAt(position).text.substr(0, position.character)
+	if (!linePrefix.endsWith('$')) return //avoid trig for nothing
+	ouputChannel.log("$")
+	return DollarCompletionList
+}
 
 //----------------------------------------------------------------------------
 function getDollarCompletionList () {
@@ -26,15 +40,6 @@ function getDollarCompletionList () {
 }
 
 //----------------------------------------------------------------------------
-function provideCompletionItems(document, position){
-	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
-	let linePrefix = document.lineAt(position).text.substr(0, position.character)
-	if (!linePrefix.endsWith('$')) return //avoid trig for nothing
-	ouputChannel.log("$")
-	return DollarCompletionList
-}
-
-//----------------------------------------------------------------------------
 module.exports = {
-	provideCompletionItems,
+	provideCompletionItemsDollar,
 }

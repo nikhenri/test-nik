@@ -14,19 +14,22 @@ const collection = vscode.languages.createDiagnosticCollection('nik')
 const tempDir = os.tmpdir().replace(/\\/g,"/")
 
 //----------------------------------------------------------------------------
+function updateDiagnostic() {
+    return utils.tryCatch(__updateDiagnostic)
+}
+
+//----------------------------------------------------------------------------
 // Save activeTextEditor text in file
 // search activeTextEditor dependancy
 // create and execute vlog cmd
 // Extract info from cmd stdout
 // Add error wave
-function updateDiagnostic() {
-    ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+function __updateDiagnostic() {
 
     let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
     if(uri.scheme != 'file') return
     if(path.parse(uri.fsPath).ext == ".svh") return
 
-    ouputChannel.log("Diagnostic")
     utils.getFileText() // init
     let fileNameWithoutExt = utils.uriToFileNameWithoutExt(uri)
     let fileNameExt = path.parse(uri.fsPath).ext
@@ -55,9 +58,10 @@ function getTempFilePath (fileNameWithoutExt, fileNameExt, directory) {
 // get the vlog command to run in order to compile the file with pkg
 function getCompilationCommand (fileNameWithoutExt, fileNameExt, directory, uri) {
     let fileDir = path.dirname(uri.fsPath).replace(/\\/g,"/")
-    let incdirStr = getIncdirStrFromSettings()
+    // let incdirStr = getIncdirStrFromSettings()
     let fileStr = getCompilationFileList(fileNameWithoutExt, fileNameExt, directory)
-    let cmdStr = `vlog -quiet -warning error -svinputport=relaxed -lint=default -suppress 2181,7061,2254 -work ${directory} +incdir+${fileDir} ${incdirStr} ${fileStr}`
+
+    let cmdStr = `vlog -quiet -warning error -svinputport=relaxed -lint=default +incdir+${fileDir} -work ${directory} ${vscode.workspace.getConfiguration('nik').get("vlog_arg") || ""} ${fileStr}`
     ouputChannel.log(cmdStr)
     return cmdStr
 }
@@ -75,18 +79,18 @@ function getCompilationFileList(fileNameWithoutExt, fileNameExt, directory) {
 
 //----------------------------------------------------------------------------
 // load the path put by the user, load once
-function getIncdirStrFromSettings() {
-    if(!getIncdirStrFromSettings.incdirStr) {
-        let workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
-        let incdirList = vscode.workspace.getConfiguration('nik').get("incdir")
-        if(incdirList)
-            getIncdirStrFromSettings.incdirStr = `+incdir+${workspaceFolder}/` + incdirList.join(` +incdir+${workspaceFolder}/`)
-        else
-            getIncdirStrFromSettings.incdirStr = ""
-    }
-    // console.log(`incdirStr: ${incdirStr}`)
-    return getIncdirStrFromSettings.incdirStr
-}
+// function getIncdirStrFromSettings() {
+//     if(!getIncdirStrFromSettings.incdirStr) {
+//         let workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
+//         let incdirList = vscode.workspace.getConfiguration('nik').get("incdir")
+//         if(incdirList)
+//             getIncdirStrFromSettings.incdirStr = `+incdir+${workspaceFolder}/` + incdirList.join(` +incdir+${workspaceFolder}/`)
+//         else
+//             getIncdirStrFromSettings.incdirStr = ""
+//     }
+//     // console.log(`incdirStr: ${incdirStr}`)
+//     return getIncdirStrFromSettings.incdirStr
+// }
 
 //----------------------------------------------------------------------------
 // The function call after the compilation is done, analyse stdout and add/remove error

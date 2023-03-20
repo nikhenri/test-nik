@@ -5,9 +5,9 @@ const vscode = require('vscode')
 const utils = require('./utils')
 const definition = require('./definition')
 const terminal = require('./terminal')
-const completionItems_dot = require('./completionItems_dot')
-const completionItems_dollar = require('./completionItems_dollar')
-const completionItems_variable = require('./completionItems_variable')
+const completionItemsDot = require('./completionItemsDot')
+const completionItemsDollar = require('./completionItemsDollar')
+const completionItemsVariable = require('./completionItemsVariable')
 const diagnostic = require('./diagnostic')
 const ouputChannel = require('./ouputChannel')
 
@@ -18,19 +18,23 @@ ouputChannel.log(`Loading ${extensionId} v${vscode.extensions.getExtension(exten
 //----------------------------------------------------------------------------
 // Register all functionnality we have
 function activate(context) {
-	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+	return utils.tryCatch(__activate, context)
+}
+
+//----------------------------------------------------------------------------
+// Register all functionnality we have
+function __activate(context) {
 	if (vscode.workspace.workspaceFolders) {
 		utils.getFilePath() // init all the path
-
 		context.subscriptions.push([
-			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems_dot.provideCompletionItems}, '.'),
-			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems_dollar.provideCompletionItems}, '$'),
-			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItems_variable.provideCompletionItems}),
+			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsDot.provideCompletionItemsDot}, '.'),
+			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsDollar.provideCompletionItemsDollar}, '$'),
+			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsVariable.provideCompletionItemsVariable}),
 			vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
-			vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
-			vscode.workspace.onDidChangeTextDocument(event => {
-				if(vscode.languages.match('systemverilog', event.document))
-					onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)
+		 	vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
+		 	vscode.workspace.onDidChangeTextDocument(event => {
+			if(vscode.languages.match('systemverilog', event.document))
+				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)
 			}),
 			vscode.window.onDidChangeActiveTextEditor(editor => {
 				if(vscode.languages.match('systemverilog', editor.document))

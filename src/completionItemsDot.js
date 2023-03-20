@@ -6,8 +6,12 @@ const utils = require('./utils')
 const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
-function provideCompletionItems(document, position){
-	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+function provideCompletionItemsDot(document, position){
+	return utils.tryCatch(__provideCompletionItemsDot, document, position)
+}
+
+//----------------------------------------------------------------------------
+function __provideCompletionItemsDot(document, position){
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
 	ouputChannel.log(".")
@@ -73,5 +77,5 @@ function getStructMemberList(str){
 
 //----------------------------------------------------------------------------
 module.exports = {
-	provideCompletionItems,
+	provideCompletionItemsDot,
 }

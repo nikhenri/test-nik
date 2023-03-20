@@ -13,6 +13,14 @@ function log(text) {
 }
 
 //----------------------------------------------------------------------------
+function error(text) {
+    text = `!!! CRASH !!!: ${text}`
+    outputChannel.appendLine(text)
+    console.log(text)
+    vscode.window.showErrorMessage(text)
+}
+//----------------------------------------------------------------------------
 module.exports = {
 	log,
+    error,
 }

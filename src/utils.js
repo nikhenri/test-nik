@@ -213,6 +213,20 @@ function getMatchInImport(fileNameWithoutExt, funcMatch) {
 }
 
 //----------------------------------------------------------------------------
+// Catch to see the error
+function tryCatch(func, ...args) {
+	ouputChannel.log(`Entering fct '${func.name}'`);
+	let ret
+	try {
+		ret = func(...args)
+	} catch(error) {
+		ouputChannel.error(error)
+	}
+	ouputChannel.log(`Leaving fct '${func.name}'`);
+	return ret
+}
+
+//----------------------------------------------------------------------------
 module.exports = {
     replaceCommentWithSpace,
 	removeComment,
@@ -226,6 +240,7 @@ module.exports = {
 	getMatchInFileOrImport,
 	getMatchInAllFile,
 	getImportNameListInOrder,
+	tryCatch,
 }
 
 //----------------------------------------------------------------------------
