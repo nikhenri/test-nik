@@ -20,6 +20,8 @@ const tempDir = os.tmpdir().replace(/\\/g,"/")
 // Extract info from cmd stdout
 // Add error wave
 function updateDiagnostic() {
+    ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+
     let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
     if(uri.scheme != 'file') return
     if(path.parse(uri.fsPath).ext == ".svh") return
@@ -89,7 +91,7 @@ function getIncdirStrFromSettings() {
 //----------------------------------------------------------------------------
 // The function call after the compilation is done, analyse stdout and add/remove error
 function compilationCommandCallback(uri, fileNameWithoutExt, directory, error, stdout) {
-    fs.rmdir(directory, { recursive: true }, ()=>{})
+    fs.rm(directory, { recursive: true }, ()=>{})
     if(error) {
         ouputChannel.log(stdout)
         let {line, msg} = getLineAndMsgFromStdout(stdout, fileNameWithoutExt)

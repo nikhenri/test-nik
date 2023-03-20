@@ -2,12 +2,14 @@
 // Contains function to handle vscode TERMINAL
 //----------------------------------------------------------------------------
 const vscode = require('vscode')
+const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 // We want to clickable link for ModelSim Time print, example:
 //   #    Time: 0 fs  Iteration: 0  Instance: /tcp_dma_tb/DUT/qmngr_top/local_pointers_if File: C:/src/queue_manager/src/qmngr_top.sv Line: 451
 function provideTerminalLinks(context) {
-    console.log(`Terminal line: ${context.line}`)
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
+  console.log(`Terminal line: ${context.line}`)
 	let matchArray = Array.from(context.line.matchAll(/([^ ]+) Line: (\d+)/g))
 	if (matchArray.length) {
 		return [{startIndex: matchArray[0].index,
@@ -20,6 +22,7 @@ function provideTerminalLinks(context) {
 // What to we do when the link is clicked
 // show document at the right line
 function handleTerminalLink(link) {
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
     //console.log(`link: ${JSON.stringify(link)}`)
 	let pos = new vscode.Position(parseInt(link.line) - 1, 0)
     vscode.workspace.openTextDocument(link.uri)

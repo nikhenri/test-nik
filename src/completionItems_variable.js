@@ -7,6 +7,7 @@ const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 function provideCompletionItems(document){
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
 	let documentWithoutComment = utils.removeComment(document.getText())
 	let entityAndArchObj = getEntityAndArch(documentWithoutComment)
 	if(!entityAndArchObj) return

@@ -18,6 +18,7 @@ ouputChannel.log(`Loading ${extensionId} v${vscode.extensions.getExtension(exten
 //----------------------------------------------------------------------------
 // Register all functionnality we have
 function activate(context) {
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
 	if (vscode.workspace.workspaceFolders) {
 		utils.getFilePath() // init all the path
 

@@ -8,6 +8,7 @@ const ouputChannel = require('./ouputChannel')
 //----------------------------------------------------------------------------
 // Return a vscode location
 function provideDefinition (document, position) {
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
 	ouputChannel.log("CTRL")
 
 	utils.getFileText() // init

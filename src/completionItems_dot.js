@@ -7,6 +7,7 @@ const ouputChannel = require('./ouputChannel')
 
 //----------------------------------------------------------------------------
 function provideCompletionItems(document, position){
+	ouputChannel.log(`Trace: ${(new Error().stack.split("at ")[1]).trim()}`);
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
 	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
 	ouputChannel.log(".")
