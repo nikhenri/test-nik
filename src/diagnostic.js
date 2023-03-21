@@ -25,21 +25,22 @@ function updateDiagnostic() {
 // Extract info from cmd stdout
 // Add error wave
 function __updateDiagnostic() {
+    if(vscode.window.activeTextEditor.document && vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document)) {
+        let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
+        ouputChannel.log(`updateDiagnostic: file = '${uri.fsPath}'`)
+        if(uri.scheme != 'file') return
+        if(path.parse(uri.fsPath).ext == ".svh") return
 
-    let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
-    ouputChannel.log(`updateDiagnostic: file = '${uri.fsPath}'`)
-    if(uri.scheme != 'file') return
-    if(path.parse(uri.fsPath).ext == ".svh") return
+        utils.getFileText() // init
+        let fileNameWithoutExt = utils.uriToFileNameWithoutExt(uri)
+        let fileNameExt = path.parse(uri.fsPath).ext
 
-    utils.getFileText() // init
-    let fileNameWithoutExt = utils.uriToFileNameWithoutExt(uri)
-    let fileNameExt = path.parse(uri.fsPath).ext
-
-    fs.mkdtemp(tempDir + '/work_', (err, directory) => {
-        saveCurrentTextToTemporayFile(fileNameWithoutExt, fileNameExt, directory)
-        let cmdStr = getCompilationCommand(fileNameWithoutExt, fileNameExt, directory, uri)
-        child_process.exec(cmdStr, (error, stdout) => {compilationCommandCallback(uri, fileNameWithoutExt, directory, error, stdout)})
-    })
+        fs.mkdtemp(tempDir + '/work_', (err, directory) => {
+            saveCurrentTextToTemporayFile(fileNameWithoutExt, fileNameExt, directory)
+            let cmdStr = getCompilationCommand(fileNameWithoutExt, fileNameExt, directory, uri)
+            child_process.exec(cmdStr, (error, stdout) => {compilationCommandCallback(uri, fileNameWithoutExt, directory, error, stdout)})
+        })
+    }
 }
 
 //----------------------------------------------------------------------------

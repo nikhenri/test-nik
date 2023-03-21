@@ -32,17 +32,23 @@ function __activate(context) {
 			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsVariable.provideCompletionItemsVariable}),
 			vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
 		 	vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
+
 		 	vscode.workspace.onDidChangeTextDocument(event => {
-			if(vscode.languages.match('systemverilog', event.document))
+			if(event.document == vscode.window.activeTextEditor.document) // only for current active windows
 				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 2000)
 			}),
-			vscode.window.onDidChangeActiveTextEditor(editor => {
-				if(vscode.languages.match('systemverilog', editor.document))
-					diagnostic.updateDiagnostic(editor)
+
+			vscode.window.onDidChangeActiveTextEditor((editor) => { //occur when active windows change
+				if(editor)
+					diagnostic.updateDiagnostic()
 			}),
+
+		// 	vscode.window.onDidChangeTextEditorSelection(() => { // occur each time the cursor move on the windows
+		// 		onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 2000)
+		// 	}),
 		])
 
-		if(vscode.window.activeTextEditor && vscode.languages.match('systemverilog', vscode.window.activeTextEditor.document))
+		if(vscode.window.activeTextEditor)
 			diagnostic.updateDiagnostic()
 
 		ouputChannel.log(`${extensionId} activate() done`)
