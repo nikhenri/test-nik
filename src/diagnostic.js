@@ -27,6 +27,7 @@ function updateDiagnostic() {
 function __updateDiagnostic() {
 
     let uri = vscode.window.activeTextEditor.document.uri //Save value before it change
+    ouputChannel.log(`updateDiagnostic: file = '${uri.fsPath}'`)
     if(uri.scheme != 'file') return
     if(path.parse(uri.fsPath).ext == ".svh") return
 

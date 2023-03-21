@@ -34,7 +34,7 @@ function __activate(context) {
 		 	vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
 		 	vscode.workspace.onDidChangeTextDocument(event => {
 			if(vscode.languages.match('systemverilog', event.document))
-				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 1000)
+				onDidChangeTextDocumentDebounce(diagnostic.updateDiagnostic, 2000)
 			}),
 			vscode.window.onDidChangeActiveTextEditor(editor => {
 				if(vscode.languages.match('systemverilog', editor.document))

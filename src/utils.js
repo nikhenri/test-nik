@@ -30,26 +30,34 @@ function removeComment(text) {
 // Ex: toto => return C:/something/toto.sv
 // If 'fileNameWithoutExt' is false, will return a list of all the file with extension .sv or .v
 function getFilePath(fileNameWithoutExt) {
+	if(fileNameWithoutExt) ouputChannel.log(`getFilePath: Searching '${fileNameWithoutExt}'`)
+
 	let filePath
 	let search_fileNameWithoutExt = (x=> path.parse(x).name == fileNameWithoutExt) // find function
 	// If the list is not initialized OR we want all file OR the file is not found in list
 	if(!getFilePath.listOfPath || !fileNameWithoutExt || !(filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt))) {
-		ouputChannel.log(`Updating findFiles for ${fileNameWithoutExt}...`)
-		//let finFiles = await vscode.workspace.findFiles("**/*.{v,sv}") //get URI of all file
-		//getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
+		ouputChannel.log(`getFilePath: Updating listOfPath ...`)
 		const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
 		getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
-		if (fileNameWithoutExt) //if we want a specific file
+		ouputChannel.log("getFilePath: Updating listOfPath done!")
+	}
+
+	if (fileNameWithoutExt) { //if we want a specific file
+		if(!filePath)
 			filePath = getFilePath.listOfPath.find(search_fileNameWithoutExt)
-		else // if we want all file
-			filePath = getFilePath.listOfPath
-		ouputChannel.log("Update done")
-	}
+
+	} else // if we want all file
+		filePath = getFilePath.listOfPath
+
+	// check result
 	if(!filePath) {
-		let str = `Was not able to found file '${fileNameWithoutExt}.{v|sv}'`
-		ouputChannel.log(str)
+		let str = `getFilePath: Found nothing for getFilePath(${fileNameWithoutExt})`
+		ouputChannel.error(str)
 		vscode.window.showErrorMessage(str)
-	}
+
+	} else if(fileNameWithoutExt)
+		ouputChannel.log(`getFilePath: Found '${fileNameWithoutExt}' = '${filePath}'`)
+
 	return filePath
 }
 // let a = ['aaa/nnn', 'ccc/bbb']
@@ -58,6 +66,10 @@ function getFilePath(fileNameWithoutExt) {
 //   return result
 // }, {})
 // console.log(b)
+//getFilePath.listOfPath = finFiles.map(x => x.fsPath.replace(/\\/g,"/")) //keep only the path
+//const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath.replace(/\\/g,"/")
+// getFilePath.listOfPath = glob.sync(`${workspaceFolder}/**/*.{v,sv}`) //get URI of all file
+
 //----------------------------------------------------------------------------
 // Get the text comment removed in a file, based on the fileNameWithoutExt
 // This function will save the text in memory
