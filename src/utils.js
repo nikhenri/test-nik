@@ -51,9 +51,7 @@ function getFilePath(fileNameWithoutExt) {
 
 	// check result
 	if(!filePath) {
-		let str = `getFilePath: Found nothing for getFilePath(${fileNameWithoutExt})`
-		ouputChannel.error(str)
-		vscode.window.showErrorMessage(str)
+		vscode.window.showErrorMessage(`getFilePath: Found nothing for '${fileNameWithoutExt}'`)
 
 	} else if(fileNameWithoutExt)
 		ouputChannel.log(`getFilePath: Found '${fileNameWithoutExt}' = '${filePath}'`)
@@ -84,8 +82,12 @@ function getFileText(fileNameWithoutExt) {
 
 	if(!(fileNameWithoutExt in getFileText.textObj)) { // not already read
 		let path = getFilePath(fileNameWithoutExt)
+		if(!path) {
+			ouputChannel.log(`getFileText: Can't read '${fileNameWithoutExt}', file not found`)
+			return
+		}
+
 		let text
-		if(!path) return
 		if(uriToFileNameWithoutExt(vscode.window.activeTextEditor.document.uri) == fileNameWithoutExt) //file currently open
 			text = replaceCommentWithSpace(vscode.window.activeTextEditor.document.getText())
 		else
@@ -116,10 +118,14 @@ function indexToPosition (text, index) {
 //----------------------------------------------------------------------------
 // return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
 function getImportNameList(fileNameWithoutExt) {
-	let text = getFileText(fileNameWithoutExt).text
-	let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
-	if (matchAll.length) {
-		return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
+	let fileTextObj = getFileText(fileNameWithoutExt)
+	if(fileTextObj) {
+		let text = fileTextObj.text
+
+		let matchAll = Array.from(text.matchAll(/(\w+)::\*/gm))
+		if (matchAll.length) {
+			return  matchAll.map(x => x[1]).filter(x=> x != fileNameWithoutExt)
+		}
 	}
 	return []
 }
@@ -211,8 +217,11 @@ function getMatchInFileOrImport(fileNameWithoutExt, funcMatch) {
 // if MATCH => return fileTextObj that containt .path .text .fileNameWithoutExt .match
 function getMatchInFile(fileNameWithoutExt, funcMatch) {
 	let fileTextObj = getFileText(fileNameWithoutExt)
-	fileTextObj.match = funcMatch(fileTextObj.text)
-	if(fileTextObj.match.length) return fileTextObj
+	if(fileTextObj) {
+		fileTextObj.match = funcMatch(fileTextObj.text)
+		if(fileTextObj.match.length)
+			return fileTextObj
+	}
 }
 
 //----------------------------------------------------------------------------

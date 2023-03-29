@@ -96,14 +96,16 @@ function searchLocation(document, position) {
 // If no match, try the import of the file
 // If fileNameWithoutExt is FALSE try match on all files instead
 function getLocation(fileNameWithoutExt, funcMatch) {
-	let matchInFileObjList
-	if(fileNameWithoutExt) // single files
-		matchInFileObjList = [utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)]
-	else // all files
+	let matchInFileObjList = []
+	if(fileNameWithoutExt) { // single files
+		let matchInFileObj = utils.getMatchInFileOrImport(fileNameWithoutExt, funcMatch)
+		if(!matchInFileObj) return
+		matchInFileObjList = [matchInFileObj]
+	} else // all files
 		matchInFileObjList = utils.getMatchInAllFile(funcMatch)
 
 	let locationList = []
-    for (let matchInFile of matchInFileObjList) { //for files that have a match
+  for (let matchInFile of matchInFileObjList) { //for files that have a match
 		for (let match of matchInFile.match) { //for all match in that file
 			let position_start = utils.indexToPosition(matchInFile.text, match.index)
 			let position_end = utils.indexToPosition(matchInFile.text, match.index + match[0].length)
@@ -111,10 +113,9 @@ function getLocation(fileNameWithoutExt, funcMatch) {
 			// locationList.push(new vscode.Location(vscode.Uri.file(matchInFile.path), position))
 
 			locationList.push({targetRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_end.line, 999)),
-							   targetSelectionRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_start.line, 999)),
-							   targetUri: vscode.Uri.file(matchInFile.path)
-			})
-		}
+							           targetSelectionRange: new vscode.Range(new vscode.Position(position_start.line, 0), new vscode.Position(position_start.line, 999)),
+							           targetUri: vscode.Uri.file(matchInFile.path)})
+			}
     }
 
     if(locationList.length) return locationList

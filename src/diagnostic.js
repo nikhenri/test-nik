@@ -63,7 +63,7 @@ function getCompilationCommand (fileNameWithoutExt, fileNameExt, directory, uri)
     // let incdirStr = getIncdirStrFromSettings()
     let fileStr = getCompilationFileList(fileNameWithoutExt, fileNameExt, directory)
 
-    let cmdStr = `vlog -quiet -warning error -svinputport=relaxed -lint=default +incdir+${fileDir} -work ${directory} ${vscode.workspace.getConfiguration('nik').get("vlog_arg") || ""} ${fileStr}`
+    let cmdStr = `vlog -quiet -warning error -msglimit error -svinputport=relaxed -lint=default +incdir+${fileDir} -work ${directory} ${vscode.workspace.getConfiguration('nik').get("vlog_arg") || ""} ${fileStr}`
     ouputChannel.log(cmdStr)
     return cmdStr
 }
@@ -112,7 +112,7 @@ function compilationCommandCallback(uri, fileNameWithoutExt, directory, error, s
 // from the stdout get the where (line) and what (msg) to display as error
 function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
     let line, msg
-    try {
+    // try {
         let firstErrorInfo = getFirstErrorInfo(stdout)
         msg = firstErrorInfo.msg
         if(firstErrorInfo.fileNameWithoutExt != fileNameWithoutExt) { // if from import file
@@ -121,11 +121,11 @@ function getLineAndMsgFromStdout(stdout, fileNameWithoutExt) {
             line = firstErrorInfo.line
         }
 
-    } catch (error) {
-        ouputChannel.log(`CRASH: ${error}`)
-        msg = stdout
-        line = 0
-    }
+    // } catch (error) {
+    //     ouputChannel.log(`CRASH: ${error}`)
+    //     msg = stdout
+    //     line = 0
+    // }
     return {line, msg}
 }
 
