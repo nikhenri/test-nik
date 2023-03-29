@@ -10,6 +10,11 @@ vsce package
 publish:
 vsce publish
 
+vsce publish major
+vsce publish minor
+vsce publish patch
+
+
 manual install package:
 code --install-extension nikhenri-5.1.4.vsix --force
 
