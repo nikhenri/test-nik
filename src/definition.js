@@ -88,7 +88,7 @@ function searchLocation(document, position) {
 	// If we found nothing, try to get the first occurance
 	ouputChannel.log(`Searching 1er line of ${word}`)
 	location = getLocation(fileNameWithoutExt, (text) => getWordFirstOccuranceMatch(text, word))
-	if(location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
+	if(location && location[0].targetRange.start.line != position.line) return location // dont move if already 1er line
 }
 
 //----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ function isModulePort(text, name) {
 function getPinInstanceMatch(text, name, fileNameWithoutExt) {
 	// get the Instance Match
 	let matchAll = getModuleInstanceMatch(text, fileNameWithoutExt)
-	let regExp = new RegExp(`^[ ]*\\.${name}\\b`, "gm")
+	let regExp = new RegExp(`^[ ]*\\.\\s*${name}\\b`, "gm")
 	if(matchAll.length) {
 		for (let match of matchAll) { // find the pin (.name) in the match and add the offset to overall match
 			let matchPin = Array.from(match[0].matchAll(regExp))
@@ -192,7 +192,7 @@ function getPackageMatch(text) {
 
 //----------------------------------------------------------------------------
 function isInstancePin(text, name) {
-	return text.match(new RegExp(`^[ ]*\\.\\s*${name}\\b$`))
+	return text.match(new RegExp(`^[ ]*\\.\\s*\\s*${name}\\b$`))
 }
 
 //----------------------------------------------------------------------------
