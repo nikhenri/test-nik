@@ -1,5 +1,5 @@
 {
-    "always_ff": {
+    "always_ff begin": {
         "prefix": "always_ff",
         "body": [
             "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
@@ -8,25 +8,7 @@
         ]
     },
 
-    "always_ff sync reset": {
-        "prefix": "always_ff",
-        "body": [
-            "always_ff @(posedge ${1:i_clock_p}) begin: ${2:LABEL}",
-            "\tif(${3:i_reset_p}) begin",
-            "\t\t${5}",
-            "\telse",
-            "\t\t${TM_SELECTED_TEXT}",
-            "\tend",
-            "end"
-        ]
-    },
 
-    "always_comb": {
-        "prefix": "always_comb",
-        "body": [
-            "always_comb ${TM_SELECTED_TEXT}"
-        ]
-    },
 
     "always_comb begin": {
         "prefix": "always_comb",
@@ -37,12 +19,6 @@
         ]
     },
 
-    "if": {
-        "prefix": "if",
-        "body": [
-            "if(${1:condition}) ${TM_SELECTED_TEXT}"
-        ]
-    },
 
     "if begin": {
         "prefix": "if",
@@ -150,7 +126,7 @@
     },
 
     "generate": {
-        "prefix": "generate",
+        "prefix": "generate",
         "body": [
             "generate begin: ${1:LABEL}",
             "\t${0}",
@@ -159,7 +135,7 @@
     },
 
     "generate if": {
-        "prefix": "generate",
+        "prefix": "generate",
         "body": [
             "generate if(${1:condition}) begin: ${1:LABEL}",
             "\t${0}",
@@ -168,7 +144,7 @@
     },
 
     "generate for": {
-        "prefix": "generate",
+        "prefix": "generate",
         "body": [
             "generate for(genvar ${1:i}=0; ${1:i}<=${2:MAX}; ${1:i}++) begin: ${3:LABEL}",
             "\t${0}",

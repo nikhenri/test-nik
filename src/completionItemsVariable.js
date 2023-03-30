@@ -44,7 +44,7 @@ function getEntityAndArch(text) {
 // input  logic a [1:0],
 // input  logic a = 0,
 function getAllPortLabelDescFromEntity(text) {
-	let matchAll = Array.from(textz.matchAll(/#\(\s*(.*)\)\s*\(\s*(.*)\s*\)\s*;/gms)) // get all parameter and io
+	let matchAll = Array.from(text.matchAll(/#\(\s*(.*)\)\s*\(\s*(.*)\s*\)\s*;/gms)) // get all parameter and io
 	let parameter_str = matchAll[0][1].replace(/^\s*$/gm, "") //remove empty line
 	let io_str = matchAll[0][2].replace(/^\s*$/gm, "") //remove empty line
 	// create a string with both, add ',' tp make it easier for regexp, remove empty line

@@ -4,7 +4,7 @@
 const vscode = require('vscode')
 const utils = require('./utils')
 const definition = require('./definition')
-const terminal = require('./terminal')
+// const terminal = require('./terminal')
 const completionItemsDot = require('./completionItemsDot')
 const completionItemsDollar = require('./completionItemsDollar')
 const completionItemsVariable = require('./completionItemsVariable')
@@ -31,7 +31,7 @@ function __activate(context) {
 			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsDollar.provideCompletionItemsDollar}, '$'),
 			vscode.languages.registerCompletionItemProvider('systemverilog', {provideCompletionItems: completionItemsVariable.provideCompletionItemsVariable}),
 			vscode.languages.registerDefinitionProvider('systemverilog', {provideDefinition: definition.provideDefinition}),
-		 	vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
+		 	//vscode.window.registerTerminalLinkProvider({provideTerminalLinks: terminal.provideTerminalLinks, handleTerminalLink: terminal.handleTerminalLink}),
 
 		 	vscode.workspace.onDidChangeTextDocument(event => {
 			if(event.document == vscode.window.activeTextEditor.document) // only for current active windows

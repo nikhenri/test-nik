@@ -14,10 +14,10 @@ function log(text) {
 
 //----------------------------------------------------------------------------
 function error(text) {
-    text = `!!! CRASH !!!: ${text}`
+    text = `!!! CRASH !!!: ${text}\n${new Error().stack}`
+    vscode.window.showErrorMessage(text)
     outputChannel.appendLine(text)
     console.log(text)
-    vscode.window.showErrorMessage(text)
 }
 //----------------------------------------------------------------------------
 module.exports = {
