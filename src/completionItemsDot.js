@@ -27,14 +27,16 @@ function __provideCompletionItemsDot(document, position){
 			let structTypeName = getTypeName(textToSearchTypeName, signalName)
 			if(utils.wordIsReserved(structTypeName)) return // ex: logic toto;
 			let matchInFileObj = utils.getMatchInFileOrImport(fileNameWithoutExt, (text)=> searchStructInText(text, structTypeName))
-			if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
-				let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
-				let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
-				ouputChannel.log("Found struct members")
-				return completionList
-			} else { // if we are not the last section, init search text and filename
-				textToSearchTypeName = matchInFileObj.match[0][0]
-				fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
+			if(matchInFileObj) {
+				if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
+					let structMemberList = getStructMemberList(matchInFileObj.match[0][0])
+					let completionList = structMemberList.map(x=>new vscode.CompletionItem(x))
+					ouputChannel.log("Found struct members")
+					return completionList
+				} else { // if we are not the last section, init search text and filename
+					textToSearchTypeName = matchInFileObj.match[0][0]
+					fileNameWithoutExt = matchInFileObj.fileNameWithoutExt
+				}
 			}
 		}
 	}
