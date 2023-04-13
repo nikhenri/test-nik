@@ -44,12 +44,12 @@ function getEntityAndArch(text) {
 // input  logic a [1:0],
 // input  logic a = 0,
 function getAllPortLabelDescFromEntity(text) {
-	let matchAll = Array.from(text.matchAll(/module\s+.*?[;#]\s*\(\s*(.*)\)\s*;/gms)) // get all parameter and io
+	let matchAll = Array.from(text.matchAll(/module\s+.*?[;#]*\s*\(\s*(.*)\)\s*;/gms)) // get all parameter and io
 	if(!matchAll.length) return [] //no IO or parameter detected
 	let parameter_and_io_list = matchAll[0][1].split(/\r?\n/) //split in line
 
 	let nameDescArray = []
-	for (let match of parameter_and_io_list) { //each line
+	for (let match of parameter_and_io_list) { //each liner
 		match = match.replace(/\s+/gm, " ").trim() // remove duplicate space + trim
 
 		let description = match.replace(/\s*(=.*)/gm, "") // remove = ...
