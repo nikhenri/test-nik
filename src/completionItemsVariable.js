@@ -44,22 +44,22 @@ function getEntityAndArch(text) {
 // input  logic a [1:0],
 // input  logic a = 0,
 function getAllPortLabelDescFromEntity(text) {
-	let matchAll = Array.from(text.matchAll(/#\(\s*(.*)\)\s*\(\s*(.*)\s*\)\s*;/gms)) // get all parameter and io
-	let parameter_str = matchAll[0][1].replace(/^\s*$/gm, "") //remove empty line
-	let io_str = matchAll[0][2].replace(/^\s*$/gm, "") //remove empty line
-	// create a string with both, add ',' tp make it easier for regexp, remove empty line
-	let parameter_and_io_str = `${parameter_str.trim()},\n${io_str.trim()},`
-	let parameter_and_io_list = parameter_and_io_str.split(/\r?\n/) //split in line
+	let matchAll = Array.from(text.matchAll(/module\s+.*?[;#]\s*\(\s*(.*)\)\s*;/gms)) // get all parameter and io
+	if(!matchAll.length) return [] //no IO or parameter detected
+	let parameter_and_io_list = matchAll[0][1].split(/\r?\n/) //split in line
 
 	let nameDescArray = []
-	for (let match of parameter_and_io_list) { //extract all variable separate by ,
+	for (let match of parameter_and_io_list) { //each line
 		match = match.replace(/\s+/gm, " ").trim() // remove duplicate space + trim
 
-		let description = match.replace(/\s*(=.*)?,/gm, "") // remove = and ,
+		let description = match.replace(/\s*(=.*)/gm, "") // remove = ...
+		description = description.replace(/\s*,/gm, "") // remove ,
 		let not_bracket = description.replace(/\[.*?\]/gm, "") // remove []
 		matchAll = Array.from(not_bracket.matchAll(/(\w+)\s*$/gm))
-		let name = matchAll[0][1]
-		nameDescArray.push({label:name, description})
+		if(matchAll.length) {
+			let name = matchAll[0][1]
+			nameDescArray.push({label:name, description})
+		}
 	}
 	return nameDescArray
 }
