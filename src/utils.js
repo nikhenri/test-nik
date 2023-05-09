@@ -103,10 +103,12 @@ function getFileText(fileNameWithoutExt) {
 function uriToFileNameWithoutExt(uri) {
 	return filePathToFileNameWithoutExt(uri.fsPath)
 }
+
 //----------------------------------------------------------------------------
 function filePathToFileNameWithoutExt(filePath) {
 	return path.parse(filePath).name
 }
+
 //----------------------------------------------------------------------------
 // Get a index/offset caracter, convert into line/char
 function indexToPosition (text, index) {
@@ -115,6 +117,7 @@ function indexToPosition (text, index) {
 	let char = lineSplit[lineSplit.length - 1].length
 	return new vscode.Position(line, char)
 }
+
 //----------------------------------------------------------------------------
 // return a name of import use in file (import oti_header_pkg::*; => return oti_header_pkg)
 function getImportNameList(fileNameWithoutExt) {
@@ -129,6 +132,7 @@ function getImportNameList(fileNameWithoutExt) {
 	}
 	return []
 }
+
 //----------------------------------------------------------------------------
 function getImportNameListInOrder(fileNameWithoutExt) {
 	let importNameListRecursive = getImportNameListRecursive(fileNameWithoutExt)
@@ -139,6 +143,7 @@ function getImportNameListInOrder(fileNameWithoutExt) {
 	}
 	return importNameListInOrder
 }
+
 //----------------------------------------------------------------------------
 function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 	// console.log(`Inspecting ${fileNameWithoutExt}`)
@@ -149,6 +154,7 @@ function getImportNameListRecursive(fileNameWithoutExt, importList = []) {
 	}
 	return importList
 }
+
 //----------------------------------------------------------------------------
 function wordIsReserved(word) {
     return word.match(new RegExp("\\b("+
@@ -181,7 +187,6 @@ function wordIsReserved(word) {
 function wordIsNumber(word) {
     return word.match(/\b\d+/)
 }
-
 
 //----------------------------------------------------------------------------
 // use a match function to see if sucessfull in ALL file

@@ -12,20 +12,30 @@ function provideCompletionItemsDot(document, position){
 
 //----------------------------------------------------------------------------
 function __provideCompletionItemsDot(document, position){
+	// get line to see if in comment
+	// let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
+	// utils.getFileText() // init
+	// let fileTextObj = utils.getFileText(fileNameWithoutExt)
+	// let lines = fileTextObj.text.split(/\r?\n|\r|\n/g);
+	// let linePrefix_no_comment = lines[position.line].substr(0, position.character-1)
+
 	let linePrefix = document.lineAt(position).text.substr(0, position.character)
-	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix)) return //avoid trig for nothing
+	// if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix) || linePrefix_no_comment != linePrefix.slice(0,-1))
+	if (!linePrefix.endsWith('.') || !isStructAccess(linePrefix))
+		return //avoid trig for nothing
 	ouputChannel.log(".")
 	utils.getFileText() // init
 
 	let fileNameWithoutExt = utils.uriToFileNameWithoutExt(document.uri)
 	let fileTextObj = utils.getFileText(fileNameWithoutExt)
+
 	if(fileTextObj) {
 		let textToSearchTypeName = fileTextObj.text
 		let groupMatch = getStructSectionWithoutIndex(linePrefix) //split the string in section
 
 		for (let signalName of groupMatch) {
 			let structTypeName = getTypeName(textToSearchTypeName, signalName)
-			if(utils.wordIsReserved(structTypeName)) return // ex: logic toto;
+			if(!structTypeName || utils.wordIsReserved(structTypeName)) return // ex: not found or logic toto;
 			let matchInFileObj = utils.getMatchInFileOrImport(fileNameWithoutExt, (text)=> searchStructInText(text, structTypeName))
 			if(matchInFileObj) {
 				if(groupMatch[groupMatch.length-1] == signalName) { // last element, add member
@@ -61,7 +71,8 @@ function getTypeName(str, signalName){
 	// type(os_txOut_events_p) s_events_ptrWr_s;
 	// input ts_bufferHandler_cbdma_ptrWr_in is_txIn_ptrWr_p,
 	// ts_bufferHandler_cbdma_ptrWr_in [2:0] vg_byte_size_s
-    let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout)?[ ]*(\\w+)(\\(\\w+\\))?.*?\\b${signalName}\\b`, "gm")))
+  let matchAll = Array.from(str.matchAll(new RegExp(`^[ ]*(?:input|output|inout|localparam|parameter|var)?[ ]*(\\w+)(\\(\\w+\\))?.*?\\b${signalName}\\b`, "gm")))
+	if(!matchAll.length) return
 	let typeName = matchAll[0][1]
 	if(typeName != "type") return typeName
 	return getTypeName(str, matchAll[0][2].slice(1,-1))
