@@ -78,7 +78,7 @@ function getAllPortLabelDescFromEntity(text) {
 // bit [$clog2(SIZE)-1:0] [3:0] a [1:0][3:0];
 // type(woof)  b;
 function getAllSignalLabelDescFromArchitecture(text) {
-	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(?!\bassign\b|\balways_comb\b)(type\b.*?\)|\w+)[ ]*(\[.*\])*[ ]+(\w[a-zA-Z_0-9, ]*)(\[.*\])*(?:=.*)?[ ]*;/gm))
+	let matchAllvariableLineDeclaration = Array.from(text.matchAll(/^[ ]*(?!\bassign\b|\balways_comb\b)((?:var\s+)?type\b.*?\)|\w+)[ ]*(\[.*\])*[ ]+(\w[a-zA-Z_0-9, ]*)(\[.*\])*(?:=.*)?[ ]*;/gm))
 	let nameDescArray = []
 	for (let variableLineDeclaration of matchAllvariableLineDeclaration) { //extract all variable separate by ,
 		let type = variableLineDeclaration[1]
