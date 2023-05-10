@@ -32,7 +32,7 @@
         }
 
       },
-      "match": "[ |\\W]+(\\.\\s*\\w+\\b)",
+      "match": "(?:\\W|\\s+)(\\.\\s*\\w+\\b)",
       "name": "meta.include.systemverilog"
     },
 
